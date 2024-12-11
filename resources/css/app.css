@@ -1,0 +1,22 @@
+/* Ensure table header is sticky */
+.filament-tables-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #f3f4f6;  /* Adjust background to your theme */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);  /* Optional: shadow effect */
+}
+
+/* Make the table body scrollable */
+.relative.overflow-x-auto {
+    max-height: 800px;  /* Adjust to desired height */
+    overflow-y: auto;   /* Enables vertical scrolling */
+}
+
+/* Optional: Add a background color for better visibility of the sticky header */
+.filament-tables-table th {
+    background-color: #f3f4f6; /* Ensure it's visible */
+    position: sticky; /* Keeps it fixed */
+    top: 0;  /* Position it at the top */
+    z-index: 10; /* Ensure it's above other elements */
+}
