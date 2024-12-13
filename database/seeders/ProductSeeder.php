@@ -6,7 +6,6 @@ use App\Models\Company;
 use App\Models\Product\Categories;
 use App\Models\Product\Product;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class ProductSeeder extends Seeder
@@ -21,7 +20,8 @@ class ProductSeeder extends Seeder
         $companies = Company::all();
 
         if ($categories->isEmpty() || $companies->isEmpty()) {
-            $this->command->warn("Categories and Companies must be seeded before running ProductSeeder.");
+            $this->command->warn('Categories and Companies must be seeded before running ProductSeeder.');
+
             return;
         }
 

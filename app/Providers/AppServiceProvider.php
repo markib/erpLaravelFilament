@@ -19,7 +19,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(DateRangeService::class);
         $this->app->singleton(LoginResponse::class, \App\Http\Responses\LoginResponse::class);
-        
+
     }
 
     /**

@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Setting\DocumentDefault;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DefaultBillSeeder extends Seeder

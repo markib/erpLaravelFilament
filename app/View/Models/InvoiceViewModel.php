@@ -14,9 +14,7 @@ class InvoiceViewModel
     public function __construct(
         public DocumentDefault $invoice,
         public ?array $data = null
-    ) {
-        
-    }
+    ) {}
 
     public function logo(): ?string
     {
@@ -31,8 +29,9 @@ class InvoiceViewModel
     // Company related methods
     public function company_name(): string
     {
-        if (!$this->invoice->company) {
+        if (! $this->invoice->company) {
             \Log::warning('Company not found for invoice.', ['invoice_id' => $this->invoice->id]);
+
             return 'No Company Name';
         }
 
@@ -82,7 +81,7 @@ class InvoiceViewModel
 
     public function number_next(): string
     {
-        
+
         return $this->data['number_next'] ?? $this->invoice->number_next;
     }
 
@@ -105,9 +104,9 @@ class InvoiceViewModel
 
     public function invoice_due_date(): string
     {
-        
+
         $company = $this->invoice?->company;
-        if (!$company || !$company->locale || !$company->locale->date_format) {
+        if (! $company || ! $company->locale || ! $company->locale->date_format) {
             \Log::warning('Missing related data for invoice due date.', [
                 'invoice' => $this->invoice,
                 'company' => $company,

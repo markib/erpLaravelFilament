@@ -115,7 +115,7 @@ class Invoice extends Model
     public function approvalTransaction(): MorphOne
     {
         return $this->morphOne(Transaction::class, 'transactionable')
-        ->where('type', TransactionType::Journal);
+            ->where('type', TransactionType::Journal);
     }
 
     public function scopeUnpaid(Builder $query): Builder
@@ -302,11 +302,11 @@ class Invoice extends Model
     public static function getApproveDraftAction(string $action = Action::class): MountableAction
     {
         return $action::make('approveDraft')
-        ->label('Approve')
-        ->icon('heroicon-o-check-circle')
-        ->visible(function (self $record) {
-            return $record->isDraft();
-        })
+            ->label('Approve')
+            ->icon('heroicon-o-check-circle')
+            ->visible(function (self $record) {
+                return $record->isDraft();
+            })
             ->databaseTransaction()
             ->successNotificationTitle('Invoice Approved')
             ->action(function (self $record, MountableAction $action) {
@@ -319,11 +319,11 @@ class Invoice extends Model
     public static function getMarkAsSentAction(string $action = Action::class): MountableAction
     {
         return $action::make('markAsSent')
-        ->label('Mark as Sent')
-        ->icon('heroicon-o-paper-airplane')
-        ->visible(static function (self $record) {
-            return ! $record->last_sent;
-        })
+            ->label('Mark as Sent')
+            ->icon('heroicon-o-paper-airplane')
+            ->visible(static function (self $record) {
+                return ! $record->last_sent;
+            })
             ->successNotificationTitle('Invoice Sent')
             ->action(function (self $record, MountableAction $action) {
                 $record->update([

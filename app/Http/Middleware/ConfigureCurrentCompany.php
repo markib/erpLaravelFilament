@@ -20,11 +20,11 @@ class ConfigureCurrentCompany
     {
         /** @var Company $company */
         $company = Filament::getTenant();
-        
+
         if ($company) {
             CompanyConfigured::dispatch($company);
         }
-        
+
         return $next($request);
     }
 }

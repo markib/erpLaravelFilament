@@ -32,7 +32,7 @@ class BillTotalViewModel
 
             $taxAmount = Adjustment::whereIn('id', $purchaseTaxes)
                 ->pluck('rate')
-                ->sum(fn($rate) => $lineTotal * ($rate / 100));
+                ->sum(fn ($rate) => $lineTotal * ($rate / 100));
 
             return $carry + $taxAmount;
         }, 0);
@@ -45,7 +45,7 @@ class BillTotalViewModel
 
             $discountAmount = Adjustment::whereIn('id', $purchaseDiscounts)
                 ->pluck('rate')
-                ->sum(fn($rate) => $lineTotal * ($rate / 100));
+                ->sum(fn ($rate) => $lineTotal * ($rate / 100));
 
             return $carry + $discountAmount;
         }, 0);

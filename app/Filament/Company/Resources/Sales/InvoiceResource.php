@@ -7,37 +7,33 @@ use App\Enums\Accounting\InvoiceStatus;
 use App\Enums\Accounting\PaymentMethod;
 use App\Filament\Company\Resources\Sales\InvoiceResource\Pages;
 use App\Filament\Company\Resources\Sales\InvoiceResource\RelationManagers;
+use App\Filament\Company\Resources\Sales\InvoiceResource\Widgets;
 use App\Filament\Tables\Actions\ReplicateBulkAction;
+use App\Filament\Tables\Filters\DateRangeFilter;
 use App\Models\Accounting\Adjustment;
 use App\Models\Accounting\DocumentLineItem;
 use App\Models\Accounting\Invoice;
+use App\Models\Banking\BankAccount;
 use App\Models\Common\Offering;
 use App\Utilities\Currency\CurrencyConverter;
 use Awcodes\TableRepeater\Components\TableRepeater;
 use Awcodes\TableRepeater\Header;
+use Carbon\Carbon;
+use Closure;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use App\Filament\Tables\Filters\DateRangeFilter;
-use App\Models\Banking\BankAccount;
-use Filament\Support\Enums\Alignment;
-use Closure;
-use Filament\Notifications\Notification;
-use Illuminate\Database\Eloquent\Collection;
-use App\Filament\Company\Resources\Sales\InvoiceResource\Widgets;
-use Carbon\Carbon;
-
-
-
 
 class InvoiceResource extends Resource
 {
@@ -48,7 +44,7 @@ class InvoiceResource extends Resource
     public static function form(Form $form): Form
     {
         $company = Auth::user()->currentCompany;
-       
+
         return $form
             ->schema([Forms\Components\Section::make('Invoice Header')
                 ->collapsible()
@@ -71,16 +67,16 @@ class InvoiceResource extends Resource
                                 ->uploadButtonPosition('center bottom')
                                 ->uploadProgressIndicatorPosition('center bottom')
                                 ->getUploadedFileNameForStorageUsing(
-                                    static fn(TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
+                                    static fn (TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
                                         ->prepend(Auth::user()->currentCompany->id . '_'),
                                 )
                                 ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/gif']),
                         ]),
                         Forms\Components\Group::make([
                             Forms\Components\TextInput::make('header')
-                                ->default(fn() => $company->defaultInvoice->header),
+                                ->default(fn () => $company->defaultInvoice->header),
                             Forms\Components\TextInput::make('subheader')
-                                ->default(fn() => $company->defaultInvoice->subheader),
+                                ->default(fn () => $company->defaultInvoice->subheader),
                             Forms\Components\View::make('filament.forms.components.company-info')
                                 ->viewData([
                                     'company_name' => $company->name,
@@ -106,7 +102,7 @@ class InvoiceResource extends Resource
                             Forms\Components\Group::make([
                                 Forms\Components\TextInput::make('invoice_number')
                                     ->label('Invoice Number')
-                                    ->default(fn() => Invoice::getNextDocumentNumber()),
+                                    ->default(fn () => Invoice::getNextDocumentNumber()),
                                 Forms\Components\TextInput::make('order_number')
                                     ->label('P.O/S.O Number'),
                                 Forms\Components\DatePicker::make('date')
@@ -142,7 +138,7 @@ class InvoiceResource extends Resource
                                 }
 
                                 $relationship = $component->getRelationship();
-                                 
+
                                 $existingRecords = $component->getCachedExistingRecords();
 
                                 $recordsToDelete = [];
@@ -159,7 +155,7 @@ class InvoiceResource extends Resource
                                 $relationship
                                     ->whereKey($recordsToDelete)
                                     ->get()
-                                    ->each(static fn(Model $record) => $record->delete());
+                                    ->each(static fn (Model $record) => $record->delete());
 
                                 $childComponentContainers = $component->getChildComponentContainers(
                                     withHidden: $component->shouldSaveRelationshipsWhenHidden(),
@@ -306,14 +302,14 @@ class InvoiceResource extends Resource
                                         $taxAmount = 0;
                                         if (! empty($salesTaxes)) {
                                             $taxRates = Adjustment::whereIn('id', $salesTaxes)->pluck('rate');
-                                            $taxAmount = collect($taxRates)->sum(fn($rate) => $subtotal * ($rate / 100));
+                                            $taxAmount = collect($taxRates)->sum(fn ($rate) => $subtotal * ($rate / 100));
                                         }
 
                                         // Calculate discount amount based on subtotal
                                         $discountAmount = 0;
                                         if (! empty($salesDiscounts)) {
                                             $discountRates = Adjustment::whereIn('id', $salesDiscounts)->pluck('rate');
-                                            $discountAmount = collect($discountRates)->sum(fn($rate) => $subtotal * ($rate / 100));
+                                            $discountAmount = collect($discountRates)->sum(fn ($rate) => $subtotal * ($rate / 100));
                                         }
 
                                         // Final total
@@ -351,7 +347,7 @@ class InvoiceResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('due_date')
                     ->label('Due')
-                    ->formatStateUsing(fn(string $state): string => Carbon::parse($state)->diffForHumans())
+                    ->formatStateUsing(fn (string $state): string => Carbon::parse($state)->diffForHumans())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('date')
                     ->date()
@@ -386,8 +382,8 @@ class InvoiceResource extends Resource
                 Tables\Filters\TernaryFilter::make('has_payments')
                     ->label('Has Payments')
                     ->queries(
-                        true: fn(Builder $query) => $query->whereHas('payments'),
-                        false: fn(Builder $query) => $query->whereDoesntHave('payments'),
+                        true: fn (Builder $query) => $query->whereHas('payments'),
+                        false: fn (Builder $query) => $query->whereDoesntHave('payments'),
                     ),
                 DateRangeFilter::make('date')
                     ->fromLabel('From Date')
@@ -407,7 +403,7 @@ class InvoiceResource extends Resource
                     Invoice::getApproveDraftAction(Tables\Actions\Action::class),
                     Invoice::getMarkAsSentAction(Tables\Actions\Action::class),
                     Tables\Actions\Action::make('recordPayment')
-                        ->label(fn(Invoice $record) => $record->status === InvoiceStatus::Overpaid ? 'Refund Overpayment' : 'Record Payment')
+                        ->label(fn (Invoice $record) => $record->status === InvoiceStatus::Overpaid ? 'Refund Overpayment' : 'Record Payment')
                         ->stickyModalHeader()
                         ->stickyModalFooter()
                         ->modalFooterActionsAlignment(Alignment::End)
@@ -458,7 +454,7 @@ class InvoiceResource extends Resource
                                     };
                                 })
                                 ->rules([
-                                    static fn(): Closure => static function (string $attribute, $value, Closure $fail) {
+                                    static fn (): Closure => static function (string $attribute, $value, Closure $fail) {
                                         if (! CurrencyConverter::isValidAmount($value)) {
                                             $fail('Please enter a valid amount');
                                         }
@@ -530,7 +526,7 @@ class InvoiceResource extends Resource
                         ->successNotificationTitle('Invoices Approved')
                         ->failureNotificationTitle('Failed to Approve Invoices')
                         ->before(function (Collection $records, Tables\Actions\BulkAction $action) {
-                            $containsNonDrafts = $records->contains(fn(Invoice $record) => ! $record->isDraft());
+                            $containsNonDrafts = $records->contains(fn (Invoice $record) => ! $record->isDraft());
 
                             if ($containsNonDrafts) {
                                 Notification::make()
@@ -557,7 +553,7 @@ class InvoiceResource extends Resource
                         ->successNotificationTitle('Invoices Sent')
                         ->failureNotificationTitle('Failed to Mark Invoices as Sent')
                         ->before(function (Collection $records, Tables\Actions\BulkAction $action) {
-                            $doesntContainUnsent = $records->contains(fn(Invoice $record) => $record->status !== InvoiceStatus::Unsent);
+                            $doesntContainUnsent = $records->contains(fn (Invoice $record) => $record->status !== InvoiceStatus::Unsent);
 
                             if ($doesntContainUnsent) {
                                 Notification::make()
@@ -591,7 +587,7 @@ class InvoiceResource extends Resource
                         ->failureNotificationTitle('Failed to Record Payments')
                         ->deselectRecordsAfterCompletion()
                         ->beforeFormFilled(function (Collection $records, Tables\Actions\BulkAction $action) {
-                            $cantRecordPayments = $records->contains(fn(Invoice $record) => ! $record->canBulkRecordPayment());
+                            $cantRecordPayments = $records->contains(fn (Invoice $record) => ! $record->canBulkRecordPayment());
 
                             if ($cantRecordPayments) {
                                 Notification::make()
@@ -620,7 +616,7 @@ class InvoiceResource extends Resource
                                 ->required()
                                 ->money()
                                 ->rules([
-                                    static fn(): Closure => static function (string $attribute, $value, Closure $fail) {
+                                    static fn (): Closure => static function (string $attribute, $value, Closure $fail) {
                                         if (! CurrencyConverter::isValidAmount($value)) {
                                             $fail('Please enter a valid amount');
                                         }

@@ -2,10 +2,10 @@
 
 namespace App\Filament\Company\Clusters\Settings\Resources;
 
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
-use BezhanSalleh\FilamentShield\Forms\ShieldSelectAllToggle;
 use App\Filament\Company\Clusters\Settings\Resources\RoleResource\Pages;
 use App\Models\Role;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
+use BezhanSalleh\FilamentShield\Forms\ShieldSelectAllToggle;
 use BezhanSalleh\FilamentShield\Support\Utils;
 use BezhanSalleh\FilamentShield\Traits\HasShieldFormComponents;
 use Filament\Facades\Filament;
@@ -24,12 +24,11 @@ class RoleResource extends Resource implements HasShieldPermissions
     use HasShieldFormComponents;
 
     protected static ?string $recordTitleAttribute = 'name';
+
     protected static ?string $model = Role::class;
+
     // Set the static property to define the relationship
-    public static ?string  $tenantOwnershipRelationshipName = 'company';
-
-  
-
+    public static ?string $tenantOwnershipRelationshipName = 'company';
 
     public static function getPermissionPrefixes(): array
     {
@@ -42,14 +41,15 @@ class RoleResource extends Resource implements HasShieldPermissions
             'delete_any',
         ];
     }
+
     public static function canViewAny(): bool
     {
-        
+
         $user = auth()->user();
-      
+
         $user->load('roles.permissions');  // Ensure roles and permissions are loaded
 
-        $tenantId = (int)request()->route('tenant');
+        $tenantId = (int) request()->route('tenant');
         $companyId = $user->currentCompany->id;
 
         // Log the permission check to ensure it's working

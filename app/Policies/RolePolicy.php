@@ -3,9 +3,9 @@
 namespace App\Policies;
 
 use App\Models\User;
-use Spatie\Permission\Models\Role;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Models\Role;
 
 class RolePolicy
 {
@@ -16,11 +16,11 @@ class RolePolicy
      */
     public function viewAny(User $user): bool
     {
-        
+
         $user = auth()->user();
-       
+
         $user->load('roles.permissions');  // Ensure roles and permissions are loaded
-        $tenantId = (int)request()->route('tenant');
+        $tenantId = (int) request()->route('tenant');
         $company_id = $user->currentCompany->id;
         // Log the permission check to ensure it's working
         Log::info('Checking if user can view any roles:', [
@@ -29,10 +29,9 @@ class RolePolicy
             'company_id' => $company_id,
             'permission_check' => $user->hasPermissionTo('view_any_role'),
         ]);
+
         return $user->hasPermissionTo('view_any_role') && $company_id === $tenantId;
     }
-
-    
 
     /**
      * Determine whether the user can view the model.
@@ -50,7 +49,7 @@ class RolePolicy
         $user = auth()->user();
         $user->load('roles.permissions');  // Ensure roles and permissions are loaded
 
-        $tenantId = (int)request()->route('tenant');
+        $tenantId = (int) request()->route('tenant');
         $companyId = $user->currentCompany->id;
 
         // Log the permission check to ensure it's working

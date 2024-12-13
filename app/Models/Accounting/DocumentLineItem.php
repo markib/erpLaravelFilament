@@ -57,6 +57,7 @@ class DocumentLineItem extends Model
     {
         return $this->belongsTo(Offering::class);
     }
+
     public function sellableOffering(): BelongsTo
     {
         return $this->offering()->where('sellable', true);
@@ -107,7 +108,7 @@ class DocumentLineItem extends Model
         $subtotal = money($this->subtotal, CurrencyAccessor::getDefaultCurrency());
 
         return $this->taxes->reduce(
-            fn(Money $carry, Adjustment $tax) => $carry->add($subtotal->multiply($tax->rate / 100)),
+            fn (Money $carry, Adjustment $tax) => $carry->add($subtotal->multiply($tax->rate / 100)),
             money(0, CurrencyAccessor::getDefaultCurrency())
         );
     }
@@ -117,7 +118,7 @@ class DocumentLineItem extends Model
         $subtotal = money($this->subtotal, CurrencyAccessor::getDefaultCurrency());
 
         return $this->discounts->reduce(
-            fn(Money $carry, Adjustment $discount) => $carry->add($subtotal->multiply($discount->rate / 100)),
+            fn (Money $carry, Adjustment $discount) => $carry->add($subtotal->multiply($discount->rate / 100)),
             money(0, CurrencyAccessor::getDefaultCurrency())
         );
     }

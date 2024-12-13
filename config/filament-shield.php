@@ -91,5 +91,4 @@ return [
     //     'ownership_relationship' => 'company',  // This should match the method name in your Role model
     // ],
 
-
 ];

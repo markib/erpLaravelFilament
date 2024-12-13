@@ -83,7 +83,7 @@ class Company extends FilamentCompaniesCompany implements HasAvatar
     {
         return $this->hasMany(BankAccount::class, 'company_id');
     }
-    
+
     public function bills(): HasMany
     {
         return $this->hasMany(Accounting\Bill::class, 'company_id');
@@ -131,6 +131,7 @@ class Company extends FilamentCompaniesCompany implements HasAvatar
     {
         return $this->hasMany(Accounting\Invoice::class, 'company_id');
     }
+
     public function departments(): HasMany
     {
         return $this->hasMany(Department::class, 'company_id');

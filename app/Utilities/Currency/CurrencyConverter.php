@@ -48,6 +48,7 @@ class CurrencyConverter
 
         return money($amount, $currency)->format();
     }
+
     public static function convertCentsToFloat(int $amount, ?string $currency = null): float
     {
         $currency ??= CurrencyAccessor::getDefaultCurrency();

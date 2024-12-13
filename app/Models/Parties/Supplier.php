@@ -28,7 +28,6 @@ class Supplier extends Model
         'updated_by',
     ];
 
-  
     protected $casts = [
         'enabled' => 'boolean',
     ];

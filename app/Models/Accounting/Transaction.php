@@ -17,6 +17,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 #[ObservedBy(TransactionObserver::class)]
 class Transaction extends Model
@@ -25,6 +27,17 @@ class Transaction extends Model
     use CompanyOwned;
     use HasFactory;
 
+    public static function boot()
+    {
+        parent::boot();
+
+        Relation::morphMap([
+            'invoice' => Invoice::class,
+            'bill' => Bill::class,
+            'bankAccount' => BankAccount::class,
+            'journal_entry' => JournalEntry::class,
+        ]);
+    }
     protected $fillable = [
         'company_id',
         'account_id', // Account from Chart of Accounts (Income/Expense accounts)
@@ -44,6 +57,8 @@ class Transaction extends Model
         'posted_at',
         'created_by',
         'updated_by',
+        'transactionable_type', 
+        'transactionable_id', 
     ];
 
     protected $casts = [
@@ -73,6 +88,11 @@ class Transaction extends Model
     public function journalEntries(): HasMany
     {
         return $this->hasMany(JournalEntry::class, 'transaction_id');
+    }
+
+    public function transactionable(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     public function isUncategorized(): bool

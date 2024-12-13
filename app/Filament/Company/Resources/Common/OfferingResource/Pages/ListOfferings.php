@@ -17,6 +17,7 @@ class ListOfferings extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
     public function getMaxContentWidth(): MaxWidth | string | null
     {
         return 'max-w-8xl';

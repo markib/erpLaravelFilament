@@ -33,9 +33,9 @@ class DateRangeFilter extends Filter
 
         $this->form([
             DatePicker::make('from')
-                ->label(fn() => $this->fromLabel)
+                ->label(fn () => $this->fromLabel)
                 ->live()
-                ->default(fn() => $this->defaultFromDate)
+                ->default(fn () => $this->defaultFromDate)
                 ->maxDate(function (Get $get) {
                     return $get('until');
                 })
@@ -45,9 +45,9 @@ class DateRangeFilter extends Filter
                     }
                 }),
             DatePicker::make('until')
-                ->label(fn() => $this->untilLabel)
+                ->label(fn () => $this->untilLabel)
                 ->live()
-                ->default(fn() => $this->defaultUntilDate)
+                ->default(fn () => $this->defaultUntilDate)
                 ->minDate(function (Get $get) {
                     return $get('from');
                 }),

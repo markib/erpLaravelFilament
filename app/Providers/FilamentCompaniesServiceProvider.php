@@ -26,24 +26,22 @@ use App\Filament\Company\Pages\Reports;
 use App\Filament\Company\Pages\Service\ConnectedAccount;
 use App\Filament\Company\Pages\Service\LiveCurrency;
 use App\Filament\Company\Resources\Banking\AccountResource;
-use App\Filament\Company\Resources\CategoryResource;
+use App\Filament\Company\Resources\Common\OfferingResource;
 use App\Filament\Company\Resources\Core\DepartmentResource;
 use App\Filament\Company\Resources\CustomerResource;
-use App\Filament\Company\Resources\ProductResource;
-use App\Filament\Company\Resources\Sales\InvoiceResource;
 use App\Filament\Company\Resources\Purchases\BillResource;
+use App\Filament\Company\Resources\Sales\InvoiceResource;
 use App\Filament\Company\Resources\SupplierResource;
 use App\Filament\Components\PanelShiftDropdown;
 use App\Filament\User\Clusters\Account;
-use App\Filament\User\Clusters\Account\Pages\Profile as PagesProfile;
 use App\Http\Middleware\ConfigureCurrentCompany;
 use App\Livewire\UpdatePassword;
 use App\Livewire\UpdateProfileInformation;
 use App\Models\Company;
 use App\Support\FilamentComponentConfigurator;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Exception;
 use Filament\Actions;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Http\Middleware\Authenticate;
@@ -73,7 +71,6 @@ use Wallo\FilamentCompanies\Enums\Provider;
 use Wallo\FilamentCompanies\FilamentCompanies;
 use Wallo\FilamentCompanies\Pages\Auth\Login;
 use Wallo\FilamentCompanies\Pages\Auth\Register;
-use App\Filament\Company\Resources\Common\OfferingResource;
 
 class FilamentCompaniesServiceProvider extends PanelProvider
 {
@@ -161,20 +158,20 @@ class FilamentCompaniesServiceProvider extends PanelProvider
                         NavigationGroup::make('HR')
                             ->icon('heroicon-o-user-group')
                             ->items(DepartmentResource::getNavigationItems()),
-                NavigationGroup::make('Sales')
-                    ->label('Sales')
-                    ->icon('heroicon-o-currency-dollar')
-                    ->items([
-                        ...InvoiceResource::getNavigationItems(),
-                      
-                    ]),
-                NavigationGroup::make('Purchases')
-                ->label('Purchases')
-                ->icon('heroicon-o-shopping-cart')
-                ->items([
-                    ...BillResource::getNavigationItems(),
+                        NavigationGroup::make('Sales')
+                            ->label('Sales')
+                            ->icon('heroicon-o-currency-dollar')
+                            ->items([
+                                ...InvoiceResource::getNavigationItems(),
 
-                ]),
+                            ]),
+                        NavigationGroup::make('Purchases')
+                            ->label('Purchases')
+                            ->icon('heroicon-o-shopping-cart')
+                            ->items([
+                                ...BillResource::getNavigationItems(),
+
+                            ]),
                         NavigationGroup::make('Manage Products')
 
                             ->localizeLabel()
@@ -192,7 +189,7 @@ class FilamentCompaniesServiceProvider extends PanelProvider
                                         ['tenant' => auth()->user()->currentCompany->id]
                                     ))
 
-                                    ->visible(fn() => auth()->user()->hasRole('admin')), // Visible to admin and product manager
+                                    ->visible(fn () => auth()->user()->hasRole('admin')), // Visible to admin and product manager
 
                                 NavigationItem::make('Products')
                                     ->url(route(
@@ -200,12 +197,9 @@ class FilamentCompaniesServiceProvider extends PanelProvider
                                         ['tenant' => auth()->user()->currentCompany->id]
                                     ))
 
-                                    ->visible(fn() => auth()->user()->hasRole('admin')), // Same visibility
+                                    ->visible(fn () => auth()->user()->hasRole('admin')), // Same visibility
 
                             ]),
-
-
-
 
                         NavigationGroup::make('Services')
                             ->localizeLabel()
@@ -229,19 +223,19 @@ class FilamentCompaniesServiceProvider extends PanelProvider
                                         'tenant' => auth()->user()->currentCompany->id ?? 1,
                                     ])),
                                 // ->icon('heroicon-o-plus'),
-                                ]),
-                NavigationGroup::make('Parties')
-                    ->localizeLabel()
-                    ->icon('heroicon-o-clipboard-document-list')
-                    ->extraSidebarAttributes(['class' => 'es-sidebar-group'])
-                    ->items([
-                        ...CustomerResource::getNavigationItems(),
-                        ...SupplierResource::getNavigationItems(),
-                    ]),
-                           ]);
+                            ]),
+                        NavigationGroup::make('Parties')
+                            ->localizeLabel()
+                            ->icon('heroicon-o-clipboard-document-list')
+                            ->extraSidebarAttributes(['class' => 'es-sidebar-group'])
+                            ->items([
+                                ...CustomerResource::getNavigationItems(),
+                                ...SupplierResource::getNavigationItems(),
+                            ]),
+                    ]);
             })
             ->viteTheme('resources/css/filament/company/theme.css')
-            ->brandLogo(static fn() => view('components.icons.logo'))
+            ->brandLogo(static fn () => view('components.icons.logo'))
             ->tenant(Company::class, ownershipRelationship: 'company')
             ->tenantProfile(ManageCompany::class)
             ->tenantRegistration(CreateCompany::class)
@@ -288,7 +282,6 @@ class FilamentCompaniesServiceProvider extends PanelProvider
     {
         $this->configurePermissions();
         $this->configureDefaults();
-
 
         FilamentCompanies::createUsersUsing(CreateNewUser::class);
         FilamentCompanies::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
@@ -351,10 +344,10 @@ class FilamentCompaniesServiceProvider extends PanelProvider
     {
         $this->configureSelect();
 
-        Actions\CreateAction::configureUsing(static fn(Actions\CreateAction $action) => FilamentComponentConfigurator::configureActionModals($action));
-        Actions\EditAction::configureUsing(static fn(Actions\EditAction $action) => FilamentComponentConfigurator::configureActionModals($action));
-        Tables\Actions\EditAction::configureUsing(static fn(Tables\Actions\EditAction $action) => FilamentComponentConfigurator::configureActionModals($action));
-        Tables\Actions\CreateAction::configureUsing(static fn(Tables\Actions\CreateAction $action) => FilamentComponentConfigurator::configureActionModals($action));
+        Actions\CreateAction::configureUsing(static fn (Actions\CreateAction $action) => FilamentComponentConfigurator::configureActionModals($action));
+        Actions\EditAction::configureUsing(static fn (Actions\EditAction $action) => FilamentComponentConfigurator::configureActionModals($action));
+        Tables\Actions\EditAction::configureUsing(static fn (Tables\Actions\EditAction $action) => FilamentComponentConfigurator::configureActionModals($action));
+        Tables\Actions\CreateAction::configureUsing(static fn (Tables\Actions\CreateAction $action) => FilamentComponentConfigurator::configureActionModals($action));
         Forms\Components\DateTimePicker::configureUsing(static function (Forms\Components\DateTimePicker $component) {
             $component->native(false);
         });
@@ -366,7 +359,7 @@ class FilamentCompaniesServiceProvider extends PanelProvider
     protected function configureSelect(): void
     {
         Select::configureUsing(function (Select $select): void {
-            $isSelectable = fn(): bool => ! $this->hasRequiredRule($select);
+            $isSelectable = fn (): bool => ! $this->hasRequiredRule($select);
 
             $select
                 ->native(false)

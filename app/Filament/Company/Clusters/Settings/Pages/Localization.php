@@ -67,7 +67,7 @@ class Localization extends Page
 
     public function mount(): void
     {
-    
+
         $this->record = LocalizationModel::firstOrNew([
             'company_id' => auth()->user()->currentCompany->id,
         ]);

@@ -2,7 +2,6 @@
 
 namespace App\Enums\Common;
 
-
 use Filament\Support\Contracts\HasLabel;
 use JaOcero\RadioDeck\Contracts\HasIcons;
 

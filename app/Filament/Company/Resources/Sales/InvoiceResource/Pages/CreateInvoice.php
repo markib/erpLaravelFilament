@@ -4,7 +4,6 @@ namespace App\Filament\Company\Resources\Sales\InvoiceResource\Pages;
 
 use App\Concerns\RedirectToListPage;
 use App\Filament\Company\Resources\Sales\InvoiceResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Support\Enums\MaxWidth;
 

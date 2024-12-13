@@ -32,8 +32,6 @@ class Unit extends Model
     ];
 
     protected $casts = [
-        'enabled' => 'boolean'
+        'enabled' => 'boolean',
     ];
-
-    
 }

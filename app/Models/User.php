@@ -31,9 +31,9 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasDefaul
     use HasConnectedAccounts;
     use HasFactory;
     use HasProfilePhoto;
+    use HasRoles;
     use Notifiable;
     use SetsProfilePhotoFromUrl;
-    use HasRoles;
     // use HasPanelShield;
 
     /**

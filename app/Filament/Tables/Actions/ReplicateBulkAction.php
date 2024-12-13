@@ -19,7 +19,7 @@ class ReplicateBulkAction extends BulkAction implements ReplicatesRecords
     protected ?Closure $afterReplicaSaved = null;
 
     protected array $relationshipsToReplicate = [];
-    
+
     protected array | Closure | null $excludedAttributesPerRelationship = null;
 
     public static function getDefaultName(): ?string

@@ -14,7 +14,7 @@ class CreateProduct extends CreateRecord
 
     protected function getCreatedNotification(): ?Notification
     {
-       
+
         return Notification::make()
             ->success()
             ->title('Product created')

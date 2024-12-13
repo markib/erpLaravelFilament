@@ -226,7 +226,7 @@ class AccountService
             ->join('journal_entries', 'journal_entries.account_id', '=', 'accounts.id')
             ->join('transactions', function (JoinClause $join) use ($endDate) {
                 $join->on('transactions.id', '=', 'journal_entries.transaction_id')
-                ->where('transactions.posted_at', '<=', $endDate);
+                    ->where('transactions.posted_at', '<=', $endDate);
             })
             ->whereExists(function (\Illuminate\Database\Query\Builder $subQuery) {
                 $subQuery->select(DB::raw(1))
@@ -246,7 +246,6 @@ class AccountService
 
         return $query;
     }
-
 
     public function getTotalBalanceForAllBankAccounts(string $startDate, string $endDate): Money
     {

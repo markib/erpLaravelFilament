@@ -13,11 +13,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-
 class Product extends Model
 {
     use Blamable;
     use CompanyOwned;
+
     // use HasDefault;
     use HasFactory;
     use SyncsWithCompanyDefaults;
@@ -55,16 +55,14 @@ class Product extends Model
     {
         return $this->belongsTo(Categories::class, 'category_id');
     }
-    
+
     protected function formattedPrice(): Attribute
     {
-        return Attribute::get(fn($value, $attributes) => number_format($attributes['product_price'], 2));
+        return Attribute::get(fn ($value, $attributes) => number_format($attributes['product_price'], 2));
     }
 
     protected static function newFactory(): Factory
     {
-         return ProductFactory::new();
+        return ProductFactory::new();
     }
- 
-
 }

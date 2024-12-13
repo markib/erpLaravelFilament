@@ -3,15 +3,12 @@
 namespace App\Filament\Company\Resources;
 
 use App\Filament\Company\Resources\CustomerResource\Pages;
-use App\Filament\Company\Resources\CustomerResource\RelationManagers;
 use App\Models\Parties\Customer;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CustomerResource extends Resource
 {
@@ -26,22 +23,22 @@ class CustomerResource extends Resource
                 ->label('Customer Name')
                 ->required()
                 ->maxLength(255),
-            Forms\Components\TextInput::make('customer_email')
-                ->label('Email Address')
-                ->email()
-                ->required(),
-            Forms\Components\TextInput::make('customer_phone')
-                ->label('Phone Number')
-                ->required(),
-            Forms\Components\TextInput::make('address')
-                ->label('Address')
-                ->nullable(),
-            Forms\Components\TextInput::make('city')
-                ->label('City')
-                ->nullable(),
-            Forms\Components\TextInput::make('country')
-                ->label('Country')
-                ->nullable(),
+                Forms\Components\TextInput::make('customer_email')
+                    ->label('Email Address')
+                    ->email()
+                    ->required(),
+                Forms\Components\TextInput::make('customer_phone')
+                    ->label('Phone Number')
+                    ->required(),
+                Forms\Components\TextInput::make('address')
+                    ->label('Address')
+                    ->nullable(),
+                Forms\Components\TextInput::make('city')
+                    ->label('City')
+                    ->nullable(),
+                Forms\Components\TextInput::make('country')
+                    ->label('Country')
+                    ->nullable(),
             ]);
     }
 
@@ -49,10 +46,10 @@ class CustomerResource extends Resource
     {
         return $table
             ->columns([
-            Tables\Columns\TextColumn::make('customer_name')->label('Customer Name'),
-            Tables\Columns\TextColumn::make('customer_email')->label('Email Address'),
-            Tables\Columns\TextColumn::make('customer_phone')->label('Phone Number'),
-            Tables\Columns\TextColumn::make('address')->label('Address'),
+                Tables\Columns\TextColumn::make('customer_name')->label('Customer Name'),
+                Tables\Columns\TextColumn::make('customer_email')->label('Email Address'),
+                Tables\Columns\TextColumn::make('customer_phone')->label('Phone Number'),
+                Tables\Columns\TextColumn::make('address')->label('Address'),
             ])
             ->filters([
                 //

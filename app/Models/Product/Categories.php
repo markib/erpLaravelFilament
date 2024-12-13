@@ -37,8 +37,6 @@ class Categories extends Model
 
     /**
      * Get the products associated with the category.
-     *
-     * @return HasMany
      */
     public function products(): HasMany
     {
@@ -49,5 +47,4 @@ class Categories extends Model
     {
         return CategoryFactory::new();
     }
- 
 }

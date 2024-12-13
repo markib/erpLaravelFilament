@@ -18,6 +18,7 @@ class EditProduct extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
@@ -25,13 +26,12 @@ class EditProduct extends EditRecord
 
     protected function getSavedNotification(): ?Notification
     {
-            
-        return Notification::make()
-        ->success()
-        ->title('Product updated')
-        ->body('The product has been saved successfully.');
-    }
 
+        return Notification::make()
+            ->success()
+            ->title('Product updated')
+            ->body('The product has been saved successfully.');
+    }
 
     // protected  function mutateFormDataBeforeSave(array $data): array
     // {
@@ -52,7 +52,6 @@ class EditProduct extends EditRecord
      */
     // protected function beforeSave(): void
     // {
-
 
     //     // Check if the record was recently created
     //     if ($this->record->wasRecentlyCreated) {

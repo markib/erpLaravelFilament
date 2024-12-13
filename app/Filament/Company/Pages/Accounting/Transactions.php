@@ -69,12 +69,20 @@ class Transactions extends Page implements HasTable
 
     public string $fiscalYearEndDate = '';
 
+    // public $transactionable_type;
+    // public $transactionable_id;
+
+
     public function mount(): void
     {
         /** @var Company $company */
         $company = Filament::getTenant();
         $this->fiscalYearStartDate = $company->locale->fiscalYearStartDate();
         $this->fiscalYearEndDate = $company->locale->fiscalYearEndDate();
+
+        // $this->transactionable_type = BankAccount::class;  // Example: Set to BankAccount by default
+        
+        // $this->transactionable_id = $company->default->bankAccount->id; 
     }
 
     public static function getModel(): string
@@ -177,7 +185,11 @@ class Transactions extends Page implements HasTable
                     ->label('Notes')
                     ->autosize()
                     ->rows(10)
-                    ->columnSpanFull(),
+                    ->columnSpanFull(),Forms\Components\Hidden::make('transactionable_type')
+                ->default(BankAccount::class), // or another class if dynamic
+            Forms\Components\Hidden::make('transactionable_id')
+                ->default(fn(Forms\Get $get) => $get('bank_account_id')), // Based on selected bank account
+
             ])
             ->columns();
     }
@@ -231,7 +243,11 @@ class Transactions extends Page implements HasTable
                     ->label('Notes')
                     ->autosize()
                     ->rows(10)
-                    ->columnSpanFull(),
+                    ->columnSpanFull(),Forms\Components\Hidden::make('transactionable_type')
+                ->default(BankAccount::class), // or another class if dynamic
+            Forms\Components\Hidden::make('transactionable_id')
+                ->default(fn(Forms\Get $get) => $get('bank_account_id')), // Based on selected bank account
+
             ])
             ->columns();
     }
@@ -245,7 +261,11 @@ class Transactions extends Page implements HasTable
                     ->tabs([
                         $this->getJournalTransactionFormEditTab(),
                         $this->getJournalTransactionFormNotesTab(),
-                    ]),
+                    ]),Forms\Components\Hidden::make('transactionable_type')
+                ->default(BankAccount::class), // or another class if dynamic
+            Forms\Components\Hidden::make('transactionable_id')
+                ->default(fn(Forms\Get $get) => $get('bank_account_id')), // Based on selected bank account
+
             ])
             ->columns(1);
     }
@@ -446,6 +466,7 @@ class Transactions extends Page implements HasTable
 
     protected function buildTransactionAction(string $name, string $label, TransactionType $type): Actions\CreateAction
     {
+        
         return Actions\CreateAction::make($name)
             ->label($label)
             ->modalWidth(MaxWidth::ThreeExtraLarge)
@@ -484,16 +505,22 @@ class Transactions extends Page implements HasTable
             'type' => $journalEntryType,
             'account_id' => static::getUncategorizedAccountByType($journalEntryType->isDebit() ? TransactionType::Withdrawal : TransactionType::Deposit)?->id,
             'amount' => '0.00',
+            //  'transactionable_type' => BankAccount::class, // Defaulting to BankAccount; update logic as needed
+            // 'transactionable_id' => BankAccount::where('enabled', true)->first()?->id,
         ];
     }
 
     protected function transactionDefaults(TransactionType $type): array
     {
+        // $defaultBankAccount = BankAccount::where('enabled', true)->first();
+
         return [
             'type' => $type,
             'bank_account_id' => BankAccount::where('enabled', true)->first()?->id,
             'amount' => '0.00',
             'account_id' => ! $type->isTransfer() ? static::getUncategorizedAccountByType($type)->id : null,
+            // 'transactionable_type' => $defaultBankAccount ? BankAccount::class : null,
+            // 'transactionable_id' => $defaultBankAccount?->id,
         ];
     }
 

@@ -102,9 +102,11 @@ class Invoice extends Page
             Log::debug('Record updated successfully:', $this->record->toArray());
         } catch (Halt $exception) {
             Log::error('Save halted:', ['exception' => $exception]);
+
             return;
         } catch (\Exception $exception) {
             Log::error('Error during save:', ['exception' => $exception]);
+
             throw $exception;
         }
 
@@ -234,7 +236,7 @@ class Invoice extends Page
                             ->localizeLabel('Item Name')
                             ->options(InvoiceModel::getAvailableItemNameOptions())
                             ->afterStateUpdated(static function (Get $get, Set $set, $state, $old) {
-                    
+
                                 if ($state !== 'other' && $old === 'other' && filled($get('item_name.custom'))) {
                                     $set('item_name.old_custom', $get('item_name.custom'));
                                     $set('item_name.custom', null);
@@ -327,6 +329,7 @@ class Invoice extends Page
     protected function handleRecordUpdate(InvoiceModel $record, array $data): InvoiceModel
     {
         $record->update($data);
+
         return $record;
     }
 

@@ -4,15 +4,12 @@ namespace App\Filament\Company\Clusters\Settings\Resources;
 
 use App\Filament\Company\Clusters\Settings;
 use App\Filament\Company\Clusters\Settings\Resources\UnitResource\Pages;
-use App\Filament\Company\Clusters\Settings\Resources\UnitResource\RelationManagers;
 use App\Models\Setting\Unit;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class UnitResource extends Resource
 {
@@ -30,17 +27,17 @@ class UnitResource extends Resource
                     ->required()
                     ->maxLength(255),
 
-            Forms\Components\TextInput::make('short_name')
-                ->required()
-                ->maxLength(255),
+                Forms\Components\TextInput::make('short_name')
+                    ->required()
+                    ->maxLength(255),
 
-            Forms\Components\TextInput::make('operator')
-            ->required()
-            ->maxLength(255),
-            
-            Forms\Components\TextInput::make('operation_value')
-            ->required()
-            ->maxLength(255),
+                Forms\Components\TextInput::make('operator')
+                    ->required()
+                    ->maxLength(255),
+
+                Forms\Components\TextInput::make('operation_value')
+                    ->required()
+                    ->maxLength(255),
             ]);
     }
 

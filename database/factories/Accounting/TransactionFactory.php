@@ -28,6 +28,10 @@ class TransactionFactory extends Factory
      */
     public function definition(): array
     {
+        // Retrieve a random BankAccount or any other related model
+        // Set default values for the polymorphic fields
+        $bankAccount = BankAccount::factory()->create(); // Or whatever model you're using
+
         return [
             'company_id' => 1,
             'bank_account_id' => 1,
@@ -40,6 +44,9 @@ class TransactionFactory extends Factory
             'posted_at' => $this->faker->dateTimeBetween('-2 years'),
             'created_by' => 1,
             'updated_by' => 1,
+            // Set polymorphic relationship
+            'transactionable_type' => BankAccount::class, // Set the related model's class name
+            'transactionable_id' => $bankAccount->id, // Set the related model's ID
         ];
     }
 

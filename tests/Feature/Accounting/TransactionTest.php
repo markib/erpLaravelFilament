@@ -7,6 +7,7 @@ use App\Filament\Forms\Components\JournalEntryRepeater;
 use App\Filament\Tables\Actions\ReplicateBulkAction;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Transaction;
+use App\Models\Banking\BankAccount;
 use App\Utilities\Currency\ConfigureCurrencies;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\DeleteBulkAction;
@@ -222,7 +223,7 @@ it('can add an income or expense transaction', function (TransactionType $transa
     $testCompany = $this->testCompany;
     $defaultBankAccount = $testCompany->default->bankAccount;
     $defaultAccount = Transactions::getUncategorizedAccountByType($transactionType);
-
+    
     livewire(Transactions::class)
         ->mountAction($actionName)
         ->assertActionDataSet([
@@ -231,22 +232,30 @@ it('can add an income or expense transaction', function (TransactionType $transa
             'bank_account_id' => $defaultBankAccount->id,
             'amount' => '0.00',
             'account_id' => $defaultAccount->id,
+            
         ])
         ->setActionData([
             'amount' => '500.00',
+             'transactionable_type' => BankAccount::class,
+            'transactionable_id' => $defaultBankAccount->id,
         ])
         ->callMountedAction()
         ->assertHasNoActionErrors();
 
     $transaction = Transaction::first();
-
+    
+    
     expect($transaction)
         ->not->toBeNull()
         ->amount->toEqual('500.00')
         ->type->toBe($transactionType)
         ->bankAccount->is($defaultBankAccount)->toBeTrue()
         ->account->is($defaultAccount)->toBeTrue()
+        ->transactionable_type->toEqual($transaction->transactionable_type) // Ensure the type is correctly set
+        ->transactionable_id->toEqual($transaction->transactionable_id)
         ->journalEntries->count()->toBe(2);
+    
+
 })->with([
     [TransactionType::Deposit, 'addIncome'],
     [TransactionType::Withdrawal, 'addExpense'],
@@ -290,6 +299,10 @@ it('can add a journal transaction', function () {
 
     $undoRepeaterFake = JournalEntryRepeater::fake();
 
+    // Get a BankAccount instance (or whatever model should be the transactionable model)
+    $bankAccount = BankAccount::factory()->create();  // Assuming you have a BankAccount factory
+    
+
     livewire(Transactions::class)
         ->mountAction('addJournalTransaction')
         ->assertActionDataSet([
@@ -304,9 +317,14 @@ it('can add a journal transaction', function () {
                 ['amount' => '1,000.00'],
                 ['amount' => '1,000.00'],
             ],
+        // Set the transactionable data
+        'transactionable_type' => BankAccount::class,  // Set the type
+        'transactionable_id' => $bankAccount->id,    // Set the ID of the related model (BankAccount)
         ])
         ->callMountedAction()
         ->assertHasNoActionErrors();
+
+    
 
     $undoRepeaterFake();
 
@@ -318,6 +336,8 @@ it('can add a journal transaction', function () {
         ->not->toBeNull()
         ->amount->toEqual('1,000.00')
         ->type->isJournal()->toBeTrue()
+        ->transactionable_type->toEqual(BankAccount::class)
+        ->transactionable_id->toEqual($bankAccount->id)
         ->bankAccount->toBeNull()
         ->account->toBeNull()
         ->journalEntries->count()->toBe(2)

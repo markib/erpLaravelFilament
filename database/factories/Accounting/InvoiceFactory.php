@@ -6,7 +6,6 @@ use App\Enums\Accounting\InvoiceStatus;
 use App\Filament\Company\Clusters\Settings\Pages\Invoice;
 use App\Models\Accounting\DocumentLineItem;
 use App\Models\Parties\Customer;
-
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 
@@ -16,6 +15,7 @@ use Illuminate\Support\Carbon;
 class InvoiceFactory extends Factory
 {
     protected $model = Invoice::class;
+
     /**
      * Define the model's default state.
      *
@@ -47,5 +47,4 @@ class InvoiceFactory extends Factory
     {
         return $this->has(DocumentLineItem::factory()->forInvoice()->count($count), 'lineItems');
     }
-
 }

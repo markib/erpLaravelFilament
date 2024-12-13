@@ -9,7 +9,6 @@ use App\Enums\Accounting\BillStatus;
 use App\Enums\Accounting\JournalEntryType;
 use App\Enums\Accounting\TransactionType;
 use App\Filament\Company\Resources\Purchases\BillResource;
-use App\Models\Common\Vendor;
 use App\Models\Parties\Supplier;
 use App\Observers\BillObserver;
 use Filament\Actions\MountableAction;
@@ -24,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
 
-#[ObservedBy(BillObserver::class)] 
+#[ObservedBy(BillObserver::class)]
 class Bill extends Model
 {
     use Blamable;

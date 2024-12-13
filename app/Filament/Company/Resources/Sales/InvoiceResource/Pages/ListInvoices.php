@@ -2,17 +2,16 @@
 
 namespace App\Filament\Company\Resources\Sales\InvoiceResource\Pages;
 
-
+use App\Enums\Accounting\InvoiceStatus;
 use App\Filament\Company\Resources\Sales\InvoiceResource;
+use App\Filament\Company\Resources\Sales\InvoiceResource\Widgets;
+use App\Models\Accounting\Invoice;
 use Filament\Actions;
 use Filament\Pages\Concerns\ExposesTableToWidgets;
+use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Enums\MaxWidth;
-use Filament\Resources\Components\Tab;
-use App\Models\Accounting\Invoice;
-use App\Enums\Accounting\InvoiceStatus;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Company\Resources\Sales\InvoiceResource\Widgets;
 
 class ListInvoices extends ListRecords
 {
@@ -60,5 +59,4 @@ class ListInvoices extends ListRecords
                 ->badge(Invoice::where('status', InvoiceStatus::Draft)->count()),
         ];
     }
-  
 }

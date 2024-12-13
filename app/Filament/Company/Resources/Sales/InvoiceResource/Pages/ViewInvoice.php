@@ -47,41 +47,41 @@ class ViewInvoice extends ViewRecord
         return $infolist
             ->schema([
                 Section::make('Invoice Details')
-                ->columns(4)
+                    ->columns(4)
                     ->schema([
                         TextEntry::make('invoice_number')
-                        ->label('Invoice #'),
+                            ->label('Invoice #'),
                         TextEntry::make('status')
-                        ->badge(),
+                            ->badge(),
                         TextEntry::make('client.name')
-                        ->label('Client')
-                        ->color('primary')
-                        ->weight(FontWeight::SemiBold)
-                            ->url(static fn(Invoice $record) => CustomerResource::getUrl('edit', ['record' => $record->client_id])),
+                            ->label('Client')
+                            ->color('primary')
+                            ->weight(FontWeight::SemiBold)
+                            ->url(static fn (Invoice $record) => CustomerResource::getUrl('edit', ['record' => $record->client_id])),
                         TextEntry::make('total')
-                        ->label('Total')
-                        ->money(),
+                            ->label('Total')
+                            ->money(),
                         TextEntry::make('amount_due')
-                        ->label('Amount Due')
-                        ->money(),
+                            ->label('Amount Due')
+                            ->money(),
                         TextEntry::make('date')
-                        ->label('Date')
-                        ->date(),
+                            ->label('Date')
+                            ->date(),
                         TextEntry::make('due_date')
-                        ->label('Due')
+                            ->label('Due')
                             ->asRelativeDay(),
                         TextEntry::make('approved_at')
-                        ->label('Approved At')
-                        ->placeholder('Not Approved')
-                        ->date(),
+                            ->label('Approved At')
+                            ->placeholder('Not Approved')
+                            ->date(),
                         TextEntry::make('last_sent')
-                        ->label('Last Sent')
-                        ->placeholder('Never')
-                        ->date(),
+                            ->label('Last Sent')
+                            ->placeholder('Never')
+                            ->date(),
                         TextEntry::make('paid_at')
-                        ->label('Paid At')
-                        ->placeholder('Not Paid')
-                        ->date(),
+                            ->label('Paid At')
+                            ->placeholder('Not Paid')
+                            ->date(),
                     ]),
             ]);
     }

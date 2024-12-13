@@ -3,15 +3,12 @@
 namespace App\Filament\Company\Resources;
 
 use App\Filament\Company\Resources\SupplierResource\Pages;
-use App\Filament\Company\Resources\SupplierResource\RelationManagers;
 use App\Models\Parties\Supplier;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SupplierResource extends Resource
 {
@@ -23,7 +20,7 @@ class SupplierResource extends Resource
     {
         return $form
             ->schema([
-            
+
                 Forms\Components\TextInput::make('supplier_name')
                     ->label('Supplier Name')
                     ->required()
@@ -39,12 +36,12 @@ class SupplierResource extends Resource
                     ->label('Address')
                     ->nullable(),
                 Forms\Components\TextInput::make('city')
-                ->label('City')
-                ->nullable(),
+                    ->label('City')
+                    ->nullable(),
                 Forms\Components\TextInput::make('country')
-                ->label('Country')
-                ->nullable(),
-            
+                    ->label('Country')
+                    ->nullable(),
+
             ]);
     }
 
@@ -52,9 +49,9 @@ class SupplierResource extends Resource
     {
         return $table
             ->columns([Tables\Columns\TextColumn::make('supplier_name')->label('Supplier Name'),
-            Tables\Columns\TextColumn::make('supplier_email')->label('Email Address'),
-            Tables\Columns\TextColumn::make('supplier_phone')->label('Phone Number'),
-            Tables\Columns\TextColumn::make('address')->label('Address'),
+                Tables\Columns\TextColumn::make('supplier_email')->label('Email Address'),
+                Tables\Columns\TextColumn::make('supplier_phone')->label('Phone Number'),
+                Tables\Columns\TextColumn::make('address')->label('Address'),
             ])
             ->filters([
                 //

@@ -6,10 +6,8 @@ use Wallo\FilamentCompanies\Pages\Company\CompanySettings;
 
 class ManageCompany extends CompanySettings
 {
-
     public static function getLabel(): string
     {
-        
 
         return 'Manage Company';
     }

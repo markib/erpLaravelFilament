@@ -80,7 +80,7 @@ class PaymentsRelationManager extends RelationManager
                         };
                     })
                     ->rules([
-                        static fn(): Closure => static function (string $attribute, $value, Closure $fail) {
+                        static fn (): Closure => static function (string $attribute, $value, Closure $fail) {
                             if (! CurrencyConverter::isValidAmount($value)) {
                                 $fail('Please enter a valid amount');
                             }
@@ -124,16 +124,16 @@ class PaymentsRelationManager extends RelationManager
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Amount')
-                    ->weight(static fn(Transaction $transaction) => $transaction->reviewed ? null : FontWeight::SemiBold)
+                    ->weight(static fn (Transaction $transaction) => $transaction->reviewed ? null : FontWeight::SemiBold)
                     ->color(
-                        static fn(Transaction $transaction) => match ($transaction->type) {
+                        static fn (Transaction $transaction) => match ($transaction->type) {
                             TransactionType::Deposit => Color::rgb('rgb(' . Color::Green[700] . ')'),
                             TransactionType::Journal => 'primary',
                             default => null,
                         }
                     )
                     ->sortable()
-                    ->currency(static fn(Transaction $transaction) => $transaction->bankAccount?->account->currency_code ?? CurrencyAccessor::getDefaultCurrency(), true),
+                    ->currency(static fn (Transaction $transaction) => $transaction->bankAccount?->account->currency_code ?? CurrencyAccessor::getDefaultCurrency(), true),
             ])
             ->filters([
                 //
@@ -141,7 +141,7 @@ class PaymentsRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Record Payment')
-                    ->modalHeading(fn(Tables\Actions\CreateAction $action) => $action->getLabel())
+                    ->modalHeading(fn (Tables\Actions\CreateAction $action) => $action->getLabel())
                     ->modalWidth(MaxWidth::TwoExtraLarge)
                     ->visible(function () {
                         return $this->getOwnerRecord()->canRecordPayment();
@@ -169,9 +169,9 @@ class PaymentsRelationManager extends RelationManager
             ->actions([
                 Tables\Actions\EditAction::make()
                     ->modalWidth(MaxWidth::TwoExtraLarge)
-                    ->after(fn() => $this->dispatch('refresh')),
+                    ->after(fn () => $this->dispatch('refresh')),
                 Tables\Actions\DeleteAction::make()
-                    ->after(fn() => $this->dispatch('refresh')),
+                    ->after(fn () => $this->dispatch('refresh')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

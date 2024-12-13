@@ -15,6 +15,7 @@ use App\Models\Common\Offering;
 use App\Utilities\Currency\CurrencyConverter;
 use Awcodes\TableRepeater\Components\TableRepeater;
 use Awcodes\TableRepeater\Header;
+use Carbon\Carbon;
 use Closure;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -28,7 +29,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class BillResource extends Resource
 {
@@ -55,7 +55,7 @@ class BillResource extends Resource
                             Forms\Components\Group::make([
                                 Forms\Components\TextInput::make('bill_number')
                                     ->label('Bill Number')
-                                    ->default(fn() => Bill::getNextDocumentNumber())
+                                    ->default(fn () => Bill::getNextDocumentNumber())
                                     ->required(),
                                 Forms\Components\TextInput::make('order_number')
                                     ->label('P.O/S.O Number'),
@@ -99,7 +99,7 @@ class BillResource extends Resource
                                 $relationship
                                     ->whereKey($recordsToDelete)
                                     ->get()
-                                    ->each(static fn(Model $record) => $record->delete());
+                                    ->each(static fn (Model $record) => $record->delete());
 
                                 $childComponentContainers = $component->getChildComponentContainers(
                                     withHidden: $component->shouldSaveRelationshipsWhenHidden(),
@@ -250,14 +250,14 @@ class BillResource extends Resource
                                         $taxAmount = 0;
                                         if (! empty($purchaseTaxes)) {
                                             $taxRates = Adjustment::whereIn('id', $purchaseTaxes)->pluck('rate');
-                                            $taxAmount = collect($taxRates)->sum(fn($rate) => $subtotal * ($rate / 100));
+                                            $taxAmount = collect($taxRates)->sum(fn ($rate) => $subtotal * ($rate / 100));
                                         }
 
                                         // Calculate discount amount based on subtotal
                                         $discountAmount = 0;
                                         if (! empty($purchaseDiscounts)) {
                                             $discountRates = Adjustment::whereIn('id', $purchaseDiscounts)->pluck('rate');
-                                            $discountAmount = collect($discountRates)->sum(fn($rate) => $subtotal * ($rate / 100));
+                                            $discountAmount = collect($discountRates)->sum(fn ($rate) => $subtotal * ($rate / 100));
                                         }
 
                                         // Final total
@@ -287,7 +287,7 @@ class BillResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('due_date')
                     ->label('Due')
-                ->formatStateUsing(fn(string $state): string => Carbon::parse($state)->diffForHumans())
+                    ->formatStateUsing(fn (string $state): string => Carbon::parse($state)->diffForHumans())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('date')
                     ->date()
@@ -321,8 +321,8 @@ class BillResource extends Resource
                 Tables\Filters\TernaryFilter::make('has_payments')
                     ->label('Has Payments')
                     ->queries(
-                        true: fn(Builder $query) => $query->whereHas('payments'),
-                        false: fn(Builder $query) => $query->whereDoesntHave('payments'),
+                        true: fn (Builder $query) => $query->whereHas('payments'),
+                        false: fn (Builder $query) => $query->whereDoesntHave('payments'),
                     ),
                 DateRangeFilter::make('date')
                     ->fromLabel('From Date')
@@ -386,7 +386,7 @@ class BillResource extends Resource
                                     };
                                 })
                                 ->rules([
-                                    static fn(): Closure => static function (string $attribute, $value, Closure $fail) {
+                                    static fn (): Closure => static function (string $attribute, $value, Closure $fail) {
                                         if (! CurrencyConverter::isValidAmount($value)) {
                                             $fail('Please enter a valid amount');
                                         }
@@ -464,7 +464,7 @@ class BillResource extends Resource
                         ->failureNotificationTitle('Failed to Record Payments')
                         ->deselectRecordsAfterCompletion()
                         ->beforeFormFilled(function (Collection $records, Tables\Actions\BulkAction $action) {
-                            $cantRecordPayments = $records->contains(fn(Bill $bill) => ! $bill->canRecordPayment());
+                            $cantRecordPayments = $records->contains(fn (Bill $bill) => ! $bill->canRecordPayment());
 
                             if ($cantRecordPayments) {
                                 Notification::make()
@@ -478,7 +478,7 @@ class BillResource extends Resource
                             }
                         })
                         ->mountUsing(function (Collection $records, Form $form) {
-                            $totalAmountDue = $records->sum(fn(Bill $bill) => $bill->getRawOriginal('amount_due'));
+                            $totalAmountDue = $records->sum(fn (Bill $bill) => $bill->getRawOriginal('amount_due'));
 
                             $form->fill([
                                 'posted_at' => now(),
@@ -493,7 +493,7 @@ class BillResource extends Resource
                                 ->required()
                                 ->money()
                                 ->rules([
-                                    static fn(): Closure => static function (string $attribute, $value, Closure $fail) {
+                                    static fn (): Closure => static function (string $attribute, $value, Closure $fail) {
                                         if (! CurrencyConverter::isValidAmount($value)) {
                                             $fail('Please enter a valid amount');
                                         }
@@ -515,7 +515,7 @@ class BillResource extends Resource
                         ])
                         ->before(function (Collection $records, Tables\Actions\BulkAction $action, array $data) {
                             $totalPaymentAmount = CurrencyConverter::convertToCents($data['amount']);
-                            $totalAmountDue = $records->sum(fn(Bill $bill) => $bill->getRawOriginal('amount_due'));
+                            $totalAmountDue = $records->sum(fn (Bill $bill) => $bill->getRawOriginal('amount_due'));
 
                             if ($totalPaymentAmount > $totalAmountDue) {
                                 $formattedTotalAmountDue = CurrencyConverter::formatCentsToMoney($totalAmountDue);
