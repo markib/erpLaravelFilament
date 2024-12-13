@@ -1,5 +1,6 @@
 @props([
-    'tenant' => filament()->getTenant(),
+'tenant' => filament()->getTenant(),
+
 ])
 
 <x-filament::avatar
@@ -9,5 +10,4 @@
     :attributes="
         \Filament\Support\prepare_inherited_attributes($attributes)
             ->class(['fi-tenant-avatar'])
-    "
-/>
+    " />
