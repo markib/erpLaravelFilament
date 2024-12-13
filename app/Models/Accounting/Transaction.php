@@ -38,6 +38,7 @@ class Transaction extends Model
             'journal_entry' => JournalEntry::class,
         ]);
     }
+
     protected $fillable = [
         'company_id',
         'account_id', // Account from Chart of Accounts (Income/Expense accounts)
@@ -57,8 +58,8 @@ class Transaction extends Model
         'posted_at',
         'created_by',
         'updated_by',
-        'transactionable_type', 
-        'transactionable_id', 
+        'transactionable_type',
+        'transactionable_id',
     ];
 
     protected $casts = [

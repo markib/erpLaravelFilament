@@ -223,7 +223,7 @@ it('can add an income or expense transaction', function (TransactionType $transa
     $testCompany = $this->testCompany;
     $defaultBankAccount = $testCompany->default->bankAccount;
     $defaultAccount = Transactions::getUncategorizedAccountByType($transactionType);
-    
+
     livewire(Transactions::class)
         ->mountAction($actionName)
         ->assertActionDataSet([
@@ -232,19 +232,18 @@ it('can add an income or expense transaction', function (TransactionType $transa
             'bank_account_id' => $defaultBankAccount->id,
             'amount' => '0.00',
             'account_id' => $defaultAccount->id,
-            
+
         ])
         ->setActionData([
             'amount' => '500.00',
-             'transactionable_type' => BankAccount::class,
+            'transactionable_type' => BankAccount::class,
             'transactionable_id' => $defaultBankAccount->id,
         ])
         ->callMountedAction()
         ->assertHasNoActionErrors();
 
     $transaction = Transaction::first();
-    
-    
+
     expect($transaction)
         ->not->toBeNull()
         ->amount->toEqual('500.00')
@@ -254,7 +253,6 @@ it('can add an income or expense transaction', function (TransactionType $transa
         ->transactionable_type->toEqual($transaction->transactionable_type) // Ensure the type is correctly set
         ->transactionable_id->toEqual($transaction->transactionable_id)
         ->journalEntries->count()->toBe(2);
-    
 
 })->with([
     [TransactionType::Deposit, 'addIncome'],
@@ -301,7 +299,6 @@ it('can add a journal transaction', function () {
 
     // Get a BankAccount instance (or whatever model should be the transactionable model)
     $bankAccount = BankAccount::factory()->create();  // Assuming you have a BankAccount factory
-    
 
     livewire(Transactions::class)
         ->mountAction('addJournalTransaction')
@@ -317,14 +314,12 @@ it('can add a journal transaction', function () {
                 ['amount' => '1,000.00'],
                 ['amount' => '1,000.00'],
             ],
-        // Set the transactionable data
-        'transactionable_type' => BankAccount::class,  // Set the type
-        'transactionable_id' => $bankAccount->id,    // Set the ID of the related model (BankAccount)
+            // Set the transactionable data
+            'transactionable_type' => BankAccount::class,  // Set the type
+            'transactionable_id' => $bankAccount->id,    // Set the ID of the related model (BankAccount)
         ])
         ->callMountedAction()
         ->assertHasNoActionErrors();
-
-    
 
     $undoRepeaterFake();
 

@@ -24,11 +24,11 @@ class TransactionObserver
      */
     public function saving(Transaction $transaction): void
     {
-        if($transaction->type->isDeposit() || $transaction->type->isWithdrawal() || $transaction->type->isTransfer()) {
+        if ($transaction->type->isDeposit() || $transaction->type->isWithdrawal() || $transaction->type->isTransfer()) {
             $transaction->transactionable_type = 'bankAccount';
             $transaction->transactionable_id = $transaction->account_id;
         }
-        
+
         if ($transaction->type->isTransfer() && $transaction->description === null) {
             $transaction->description = 'Account Transfer';
         }
@@ -39,10 +39,10 @@ class TransactionObserver
      */
     public function created(Transaction $transaction): void
     {
-        
+
         $this->transactionService->createJournalEntries($transaction);
 
-        if (!$transaction->transactionable_type) {
+        if (! $transaction->transactionable_type) {
             $transaction->transactionable_type = BankAccount::class;  // Or dynamically set based on your logic
         }
         $document = $transaction->transactionable;
@@ -114,11 +114,11 @@ class TransactionObserver
         }
 
         $depositTotal = (int) $invoice->deposits()
-            ->when($excludedTransaction, fn(Builder $query) => $query->whereKeyNot($excludedTransaction->getKey()))
+            ->when($excludedTransaction, fn (Builder $query) => $query->whereKeyNot($excludedTransaction->getKey()))
             ->sum('amount');
 
         $withdrawalTotal = (int) $invoice->withdrawals()
-            ->when($excludedTransaction, fn(Builder $query) => $query->whereKeyNot($excludedTransaction->getKey()))
+            ->when($excludedTransaction, fn (Builder $query) => $query->whereKeyNot($excludedTransaction->getKey()))
             ->sum('amount');
 
         $totalPaid = $depositTotal - $withdrawalTotal;
@@ -153,7 +153,7 @@ class TransactionObserver
         }
 
         $withdrawalTotal = (int) $bill->withdrawals()
-            ->when($excludedTransaction, fn(Builder $query) => $query->whereKeyNot($excludedTransaction->getKey()))
+            ->when($excludedTransaction, fn (Builder $query) => $query->whereKeyNot($excludedTransaction->getKey()))
             ->sum('amount');
 
         $totalPaid = $withdrawalTotal;
