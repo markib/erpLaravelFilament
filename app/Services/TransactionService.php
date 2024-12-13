@@ -37,7 +37,7 @@ class TransactionService
 
     public function storeTransactions(Company $company, BankAccount $bankAccount, array $transactions): void
     {
-        
+
         foreach ($transactions as $transaction) {
             $this->storeTransaction($company, $bankAccount, $transaction);
         }
@@ -45,7 +45,7 @@ class TransactionService
 
     public function createStartingBalanceTransaction(Company $company, Account $account, BankAccount $bankAccount, float $startingBalance, string $startDate): void
     {
-        
+
         $transactionType = $startingBalance >= 0 ? TransactionType::Deposit : TransactionType::Withdrawal;
         $chartAccount = $account->where('category', AccountCategory::Equity)->where('name', 'Owner\'s Equity')->first();
         $postedAt = Carbon::parse($startDate)->subDay()->toDateTimeString();
@@ -66,7 +66,7 @@ class TransactionService
 
     public function storeTransaction(Company $company, BankAccount $bankAccount, object $transaction): void
     {
-        
+
         $transactionType = $transaction->amount < 0 ? TransactionType::Deposit : TransactionType::Withdrawal;
         $paymentChannel = $transaction->payment_channel;
         $chartAccount = $this->getAccountFromTransaction($company, $transaction, $transactionType);
@@ -153,7 +153,7 @@ class TransactionService
 
     public function createJournalEntries(Transaction $transaction): void
     {
-        
+
         // Additional check to avoid duplication during replication
         if ($transaction->journalEntries()->exists() || $transaction->type->isJournal() || str_starts_with($transaction->description, '(Copy of)')) {
             return;
@@ -170,7 +170,7 @@ class TransactionService
 
     public function updateJournalEntries(Transaction $transaction): void
     {
-        
+
         if ($transaction->type->isJournal() || $this->hasRelevantChanges($transaction) === false) {
             return;
         }
@@ -225,10 +225,10 @@ class TransactionService
 
     private function createJournalEntriesForTransaction(Transaction $transaction, Account $debitAccount, Account $creditAccount): void
     {
-        
+
         $convertedTransactionAmount = $this->getConvertedTransactionAmount($transaction);
         // Get the transactionable model and type
-        
+
         DB::transaction(function () use ($debitAccount, $transaction, $convertedTransactionAmount, $creditAccount) {
             $debitAccount->journalEntries()->create([
                 'company_id' => $transaction->company_id,
@@ -248,7 +248,7 @@ class TransactionService
                 'description' => $transaction->description,
                 'created_by' => $transaction->created_by,
                 'updated_by' => $transaction->updated_by,
-        
+
             ]);
         });
     }
