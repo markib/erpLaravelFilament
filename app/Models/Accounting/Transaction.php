@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use App\Models\Accounting\Invoice;
 
 #[ObservedBy(TransactionObserver::class)]
 class Transaction extends Model
@@ -27,17 +28,17 @@ class Transaction extends Model
     use CompanyOwned;
     use HasFactory;
 
-    public static function boot()
-    {
-        parent::boot();
+    // public static function boot()
+    // {
+    //     parent::boot();
 
-        Relation::morphMap([
-            'invoice' => Invoice::class,
-            'bill' => Bill::class,
-            'bankAccount' => BankAccount::class,
-            'journal_entry' => JournalEntry::class,
-        ]);
-    }
+    //     Relation::morphMap([
+    //         'Invoice' => Invoice::class,
+    //         'bill' => Bill::class,
+    //         'bankAccount' => BankAccount::class,
+    //         'journal_entry' => JournalEntry::class,
+    //     ]);
+    // }
 
     protected $fillable = [
         'company_id',

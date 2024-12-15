@@ -88,27 +88,6 @@ any point by running the following command:
 
     php artisan migrate:fresh
 
-## Generating PDFs for Reports
-
-To generate PDFs for reports, the application uses Laravel Snappy. The Laravel Snappy package is already included in the
-application, but you need to install Wkhtmltopdf separately.
-
-### Wkhtmltopdf Installation
-
-1. **Download and install Wkhtmltopdf**
-    - [Wkhtmltopdf Downloads](https://wkhtmltopdf.org/downloads.html)
-
-    - Alternatively, if you are using Homebrew on macOS, you can install it using the following command:
-      ```bash
-      brew install wkhtmltopdf
-      ```
-
-2. **Configure the binary paths**
-    - If needed, you can change the paths to the Wkhtmltopdf binaries in the Snappy configuration file (
-      `config/snappy.php`).
-
-For detailed installation instructions, refer to
-the [Laravel Snappy documentation](https://github.com/barryvdh/laravel-snappy).
 
 ## Live Currency
 

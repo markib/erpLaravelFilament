@@ -33,32 +33,32 @@ return [
     |
     */
 
-    'pdf' => [
-        'enabled' => true,
-        'binary' => env('WKHTMLTOPDF_BINARY', '/usr/local/bin/wkhtmltopdf'),
-        'timeout' => false,
-        'options' => [
-            'no-pdf-compression' => true,
-            'disable-javascript' => true,
-            'margin-top' => '10mm',
-            'margin-right' => '7.5mm',
-            'margin-bottom' => '15mm',
-            'margin-left' => '7.5mm',
-            'page-size' => 'Letter',
-            'footer-right' => 'Page [page] / [toPage]',
-            'footer-font-size' => '8',
-            'footer-spacing' => '5',
-            'zoom' => '1.3',
-        ],
-        'env' => [],
-    ],
+    // 'pdf' => [
+    //     'enabled' => true,
+    //     'binary' => env('WKHTMLTOPDF_BINARY', '/usr/local/bin/wkhtmltopdf'),
+    //     'timeout' => false,
+    //     'options' => [
+    //         'no-pdf-compression' => true,
+    //         'disable-javascript' => true,
+    //         'margin-top' => '10mm',
+    //         'margin-right' => '7.5mm',
+    //         'margin-bottom' => '15mm',
+    //         'margin-left' => '7.5mm',
+    //         'page-size' => 'Letter',
+    //         'footer-right' => 'Page [page] / [toPage]',
+    //         'footer-font-size' => '8',
+    //         'footer-spacing' => '5',
+    //         'zoom' => '1.3',
+    //     ],
+    //     'env' => [],
+    // ],
 
-    'image' => [
-        'enabled' => true,
-        'binary' => env('WKHTMLTOIMAGE_BINARY', '/usr/local/bin/wkhtmltoimage'),
-        'timeout' => false,
-        'options' => [],
-        'env' => [],
-    ],
+    // 'image' => [
+    //     'enabled' => true,
+    //     'binary' => env('WKHTMLTOIMAGE_BINARY', '/usr/local/bin/wkhtmltoimage'),
+    //     'timeout' => false,
+    //     'options' => [],
+    //     'env' => [],
+    // ],
 
 ];

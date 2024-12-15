@@ -13,6 +13,7 @@ use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\IconPosition;
 use Filament\Support\Enums\IconSize;
+use Carbon\Carbon;
 
 class ViewInvoice extends ViewRecord
 {
@@ -69,7 +70,7 @@ class ViewInvoice extends ViewRecord
                             ->date(),
                         TextEntry::make('due_date')
                             ->label('Due')
-                            ->asRelativeDay(),
+                            ->formatStateUsing(fn(string $state): string => Carbon::parse($state)->diffForHumans()),
                         TextEntry::make('approved_at')
                             ->label('Approved At')
                             ->placeholder('Not Approved')
