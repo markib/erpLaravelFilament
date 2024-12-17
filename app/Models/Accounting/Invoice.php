@@ -12,6 +12,7 @@ use App\Enums\Accounting\TransactionType;
 use App\Filament\Company\Resources\Sales\InvoiceResource;
 use App\Models\Parties\Customer;
 use App\Observers\InvoiceObserver;
+use Database\Factories\Accounting\InvoiceFactory;
 use Filament\Actions\Action;
 use Filament\Actions\MountableAction;
 use Filament\Actions\ReplicateAction;
@@ -19,6 +20,7 @@ use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -386,4 +388,10 @@ class Invoice extends Model
                 return InvoiceResource::getUrl('edit', ['record' => $replica]);
             });
     }
+
+    protected static function newFactory(): Factory
+    {
+        return InvoiceFactory::new();
+    }
+
 }
