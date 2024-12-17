@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Contracts\ExportableReport;
 use App\Models\Company;
 use App\Transformers\CashFlowStatementReportTransformer;
-use Barryvdh\Snappy\Facades\SnappyPdf;
+use Mpdf\Mpdf;
 use Carbon\Exceptions\InvalidFormatException;
 use Illuminate\Support\Carbon;
 use League\Csv\Bom;
@@ -139,15 +139,24 @@ class ExportService
 
         $filename = $company->name . ' ' . $report->getTitle() . ' ' . $dateLabel . ' ' . $timestamp . '.pdf';
 
-        $pdf = SnappyPdf::loadView($report->getPdfView(), [
+        // Render the Blade view to HTML
+        $htmlContent = view($report->getPdfView(), [
             'company' => $company,
             'report' => $report,
             'startDate' => $startDate ? Carbon::parse($startDate)->toDefaultDateFormat() : null,
             'endDate' => $endDate ? Carbon::parse($endDate)->toDefaultDateFormat() : null,
-        ]);
+        ])->render();
 
-        return response()->streamDownload(function () use ($pdf) {
-            echo $pdf->inline();
+        // Initialize mPDF
+        $mpdf = new Mpdf();
+
+        // Write the HTML content to the PDF
+        $mpdf->WriteHTML($htmlContent);
+
+        // Stream the PDF to the browser
+        return response()->streamDownload(function () use ($mpdf) {
+            // Output PDF directly to the browser
+            echo $mpdf->Output('', \Mpdf\Output\Destination::STRING_RETURN);
         }, $filename);
     }
 

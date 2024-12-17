@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 #[ObservedBy(AccountObserver::class)]
@@ -79,6 +80,12 @@ class Account extends Model
         return $this->belongsTo(BankAccount::class, 'bank_account_id');
     }
 
+    public function adjustment(): HasOne
+    {
+        return $this->hasOne(Adjustment::class, 'account_id');
+    }
+
+
     public function getLastTransactionDate(): ?string
     {
         $lastJournalEntryTransaction = $this->journalEntries()
@@ -126,6 +133,16 @@ class Account extends Model
     public static function getAccountsPayableAccount(): self
     {
         return self::where('name', 'Accounts Payable')->firstOrFail();
+    }
+
+    public static function getSalesDiscountAccount(): self
+    {
+        return self::where('name', 'Sales Discount')->firstOrFail();
+    }
+
+    public static function getPurchaseDiscountAccount(): self
+    {
+        return self::where('name', 'Purchase Discount')->firstOrFail();
     }
 
     protected static function newFactory(): Factory

@@ -235,7 +235,8 @@ class FilamentCompaniesServiceProvider extends PanelProvider
                     ]);
             })
             ->viteTheme('resources/css/filament/company/theme.css')
-            ->brandLogo(static fn () => view('components.icons.logo'))
+        // ->brandLogo(static fn () => view('components.icons.logo'))
+            ->brandLogo(asset('storage/logos/company/1_alx1.png'))
             ->tenant(Company::class, ownershipRelationship: 'company')
             ->tenantProfile(ManageCompany::class)
             ->tenantRegistration(CreateCompany::class)

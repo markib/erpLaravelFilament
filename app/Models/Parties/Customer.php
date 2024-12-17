@@ -7,6 +7,9 @@ use App\Concerns\CompanyOwned;
 use App\Concerns\SyncsWithCompanyDefaults;
 use App\Models\Accounting\Invoice;
 use App\Models\Setting\Currency;
+use Database\Factories\Parties\CustomerFactory;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -16,6 +19,7 @@ class Customer extends Model
     use Blamable;
     use CompanyOwned;
     use SyncsWithCompanyDefaults;
+    use HasFactory;
 
     protected $table = 'customers';
 
@@ -44,5 +48,10 @@ class Customer extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    protected static function newFactory(): Factory
+    {
+        return CustomerFactory::new();
     }
 }
