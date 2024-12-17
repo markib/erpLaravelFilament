@@ -37,8 +37,8 @@ class DocumentLineItemFactory extends Factory
     public function forInvoice(): static
     {
         return $this->state(function (array $attributes) {
-            $offering = Offering::factory()->create(['sellable' => true]); 
-            
+            $offering = Offering::factory()->create(['sellable' => true]);
+
             return [
                 'offering_id' => $offering->id,
                 'unit_price' => $offering->price,

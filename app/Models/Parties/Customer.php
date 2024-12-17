@@ -18,8 +18,8 @@ class Customer extends Model
 {
     use Blamable;
     use CompanyOwned;
-    use SyncsWithCompanyDefaults;
     use HasFactory;
+    use SyncsWithCompanyDefaults;
 
     protected $table = 'customers';
 

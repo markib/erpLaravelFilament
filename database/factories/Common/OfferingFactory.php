@@ -2,7 +2,6 @@
 
 namespace Database\Factories\Common;
 
-use App\Enums\Accounting\AdjustmentType;
 use App\Enums\Common\OfferingType;
 use App\Models\Company;
 use App\Models\User;

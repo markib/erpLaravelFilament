@@ -26,8 +26,6 @@ class DocumentLineItem extends Model
     use CompanyOwned;
     use HasFactory;
 
-
-
     protected $table = 'document_line_items';
 
     protected $fillable = [

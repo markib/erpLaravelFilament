@@ -85,7 +85,6 @@ class Account extends Model
         return $this->hasOne(Adjustment::class, 'account_id');
     }
 
-
     public function getLastTransactionDate(): ?string
     {
         $lastJournalEntryTransaction = $this->journalEntries()

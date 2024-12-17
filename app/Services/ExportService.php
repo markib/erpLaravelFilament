@@ -5,13 +5,13 @@ namespace App\Services;
 use App\Contracts\ExportableReport;
 use App\Models\Company;
 use App\Transformers\CashFlowStatementReportTransformer;
-use Mpdf\Mpdf;
 use Carbon\Exceptions\InvalidFormatException;
 use Illuminate\Support\Carbon;
 use League\Csv\Bom;
 use League\Csv\CannotInsertRecord;
 use League\Csv\Exception;
 use League\Csv\Writer;
+use Mpdf\Mpdf;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExportService
@@ -148,7 +148,7 @@ class ExportService
         ])->render();
 
         // Initialize mPDF
-        $mpdf = new Mpdf();
+        $mpdf = new Mpdf;
 
         // Write the HTML content to the PDF
         $mpdf->WriteHTML($htmlContent);

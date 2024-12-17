@@ -3,17 +3,17 @@
 namespace App\Providers;
 
 use App\Models\Accounting\Bill;
+use App\Models\Accounting\Invoice;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Banking\BankAccount;
 use App\Services\DateRangeService;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse;
 use Filament\Notifications\Livewire\Notifications;
 use Filament\Support\Assets\Js;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Facades\FilamentAsset;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\JournalEntry;
-use App\Models\Banking\BankAccount;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -37,7 +37,6 @@ class AppServiceProvider extends ServiceProvider
         FilamentAsset::register([
             Js::make('TopNavigation', __DIR__ . '/../../resources/js/TopNavigation.js'),
         ]);
-
 
         Relation::morphMap([
             'invoice' => Invoice::class,
