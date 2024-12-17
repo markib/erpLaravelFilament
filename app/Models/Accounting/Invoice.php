@@ -393,5 +393,4 @@ class Invoice extends Model
     {
         return InvoiceFactory::new();
     }
-
 }

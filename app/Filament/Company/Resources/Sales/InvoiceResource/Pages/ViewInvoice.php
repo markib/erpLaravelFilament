@@ -5,6 +5,7 @@ namespace App\Filament\Company\Resources\Sales\InvoiceResource\Pages;
 use App\Filament\Company\Resources\CustomerResource;
 use App\Filament\Company\Resources\Sales\InvoiceResource;
 use App\Models\Accounting\Invoice;
+use Carbon\Carbon;
 use Filament\Actions;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
@@ -13,7 +14,6 @@ use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\IconPosition;
 use Filament\Support\Enums\IconSize;
-use Carbon\Carbon;
 
 class ViewInvoice extends ViewRecord
 {
@@ -70,7 +70,7 @@ class ViewInvoice extends ViewRecord
                             ->date(),
                         TextEntry::make('due_date')
                             ->label('Due')
-                            ->formatStateUsing(fn(string $state): string => Carbon::parse($state)->diffForHumans()),
+                            ->formatStateUsing(fn (string $state): string => Carbon::parse($state)->diffForHumans()),
                         TextEntry::make('approved_at')
                             ->label('Approved At')
                             ->placeholder('Not Approved')

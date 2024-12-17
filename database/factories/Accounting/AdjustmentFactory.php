@@ -5,7 +5,6 @@ namespace Database\Factories\Accounting;
 use App\Enums\Accounting\AdjustmentCategory;
 use App\Enums\Accounting\AdjustmentComputation;
 use App\Enums\Accounting\AdjustmentType;
-use App\Enums\Common\OfferingType;
 use App\Models\Accounting\Account;
 use App\Models\Company;
 use App\Models\User;
