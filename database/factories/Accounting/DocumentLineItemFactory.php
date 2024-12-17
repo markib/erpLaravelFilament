@@ -66,9 +66,7 @@ class DocumentLineItemFactory extends Factory
     public function forBill(): static
     {
         return $this->state(function (array $attributes) {
-            $offering = Offering::where('purchasable', true)
-                ->inRandomOrder()
-                ->first();
+            $offering = Offering::factory()->create(['purchasable' => true]);
 
             return [
                 'offering_id' => $offering->id,
@@ -94,3 +92,4 @@ class DocumentLineItemFactory extends Factory
         });
     }
 }
+
