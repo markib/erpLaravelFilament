@@ -15,6 +15,7 @@ use App\Models\Accounting\DocumentLineItem;
 use App\Models\Accounting\Invoice;
 use App\Models\Banking\BankAccount;
 use App\Models\Common\Offering;
+use App\Models\Product\Product;
 use App\Utilities\Currency\CurrencyConverter;
 use Awcodes\TableRepeater\Components\TableRepeater;
 use Awcodes\TableRepeater\Header;
@@ -133,12 +134,13 @@ class InvoiceResource extends Resource
                         TableRepeater::make('lineItems')
                             ->relationship()
                             ->saveRelationshipsUsing(function (TableRepeater $component, Forms\Contracts\HasForms $livewire, ?array $state) {
+                                
                                 if (! is_array($state)) {
                                     $state = [];
                                 }
 
                                 $relationship = $component->getRelationship();
-
+                                
                                 $existingRecords = $component->getCachedExistingRecords();
 
                                 $recordsToDelete = [];
@@ -174,7 +176,7 @@ class InvoiceResource extends Resource
 
                                         $itemOrder++;
                                     }
-
+                                    
                                     if ($record = ($existingRecords[$itemKey] ?? null)) {
                                         $itemData = $component->mutateRelationshipDataBeforeSave($itemData, record: $record);
 
@@ -258,12 +260,16 @@ class InvoiceResource extends Resource
                                         $offeringId = $state;
                                         $offeringRecord = Offering::with(['salesTaxes', 'salesDiscounts'])->find($offeringId);
 
+                                      
+
                                         if ($offeringRecord) {
                                             $set('description', $offeringRecord->description);
                                             $set('unit_price', $offeringRecord->price);
                                             $set('salesTaxes', $offeringRecord->salesTaxes->pluck('id')->toArray());
                                             $set('salesDiscounts', $offeringRecord->salesDiscounts->pluck('id')->toArray());
                                         }
+
+                                
                                     }),
                                 Forms\Components\TextInput::make('description'),
                                 Forms\Components\TextInput::make('quantity')

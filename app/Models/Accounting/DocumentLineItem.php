@@ -10,6 +10,7 @@ use App\Concerns\CompanyOwned;
 use App\Enums\Accounting\AdjustmentCategory;
 use App\Enums\Accounting\AdjustmentType;
 use App\Models\Common\Offering;
+use App\Models\Product\Product;
 use App\Observers\DocumentLineItemObserver;
 use App\Utilities\Currency\CurrencyAccessor;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -58,10 +59,21 @@ class DocumentLineItem extends Model
         return $this->belongsTo(Offering::class);
     }
 
+
+    // public function product(): BelongsTo
+    // {
+    //     return $this->belongsTo(Product::class);
+    // }
+
     public function sellableOffering(): BelongsTo
     {
         return $this->offering()->where('sellable', true);
     }
+
+    // public function sellableProduct(): BelongsTo
+    // {
+    //     return $this->product()->where('enabled', true);
+    // }
 
     public function purchasableOffering(): BelongsTo
     {

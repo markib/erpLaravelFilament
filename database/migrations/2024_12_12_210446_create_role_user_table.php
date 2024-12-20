@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('role_user')) {
         Schema::create('role_user', function (Blueprint $table) {
 
             $table->unsignedBigInteger('role_id');
@@ -26,6 +27,7 @@ return new class extends Migration
             // Optional: Composite primary key
             $table->primary(['user_id', 'role_id']);
         });
+    }
     }
 
     /**

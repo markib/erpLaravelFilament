@@ -10,6 +10,9 @@ use App\Enums\Accounting\AdjustmentComputation;
 use App\Enums\Accounting\AdjustmentScope;
 use App\Enums\Accounting\AdjustmentType;
 use App\Models\Common\Offering;
+use App\Models\Company;
+use App\Models\Product\Product;
+use App\Models\User;
 use App\Observers\AdjustmentObserver;
 use Database\Factories\Accounting\AdjustmentFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -43,6 +46,12 @@ class Adjustment extends Model
         'end_date',
         'created_by',
         'updated_by',
+        'status', // e.g. pending, approved, reversed
+        'transaction_id', // For linking to a related transaction
+        'previous_quantity', // For inventory adjustments
+        'new_quantity', // For inventory adjustments
+        'previous_price', // For price adjustments
+        'new_price', // For price adjustments
     ];
 
     protected $casts = [
@@ -56,14 +65,33 @@ class Adjustment extends Model
         'end_date' => 'datetime',
     ];
 
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'account_id');
+    }
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function offerings(): MorphToMany
     {
         return $this->morphedByMany(Offering::class, 'adjustmentable', 'adjustmentables');
+    }
+
+    public function transaction(): BelongsTo
+    {
+        return $this->belongsTo(Transaction::class, 'transaction_id');
+    }
+    
+    public function products(): MorphToMany
+    {
+        return $this->morphedByMany(Product::class, 'adjustmentable');
     }
 
     public function isSalesTax(): bool
