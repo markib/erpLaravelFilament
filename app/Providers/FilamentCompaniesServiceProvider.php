@@ -27,6 +27,7 @@ use App\Filament\Company\Pages\Service\ConnectedAccount;
 use App\Filament\Company\Pages\Service\LiveCurrency;
 use App\Filament\Company\Resources\Banking\AccountResource;
 use App\Filament\Company\Resources\Common\OfferingResource;
+use App\Filament\Company\Resources\AdjustmentResource;
 use App\Filament\Company\Resources\Core\DepartmentResource;
 use App\Filament\Company\Resources\CustomerResource;
 use App\Filament\Company\Resources\Purchases\BillResource;
@@ -150,6 +151,7 @@ class FilamentCompaniesServiceProvider extends PanelProvider
                             ->items([
                                 ...AccountChart::getNavigationItems(),
                                 ...Transactions::getNavigationItems(),
+                                ...AdjustmentResource::getNavigationItems(),
                             ]),
                         NavigationGroup::make('Banking')
                             ->localizeLabel()

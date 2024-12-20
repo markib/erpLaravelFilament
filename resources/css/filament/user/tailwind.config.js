@@ -9,6 +9,7 @@ export default {
         './vendor/filament/**/*.blade.php',
         './vendor/andrewdwallo/filament-companies/resources/views/**/*.blade.php',
         './vendor/bezhansalleh/filament-panel-switch/resources/views/panel-switch-menu.blade.php',
+        './vendor/jaocero/radio-deck/resources/views/**/*.blade.php',
     ],
     theme: {
         extend: {

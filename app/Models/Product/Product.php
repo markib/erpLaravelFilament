@@ -37,7 +37,7 @@ class Product extends Model
         'product_tax_type',
         'product_stock_alert',
         'product_barcode_symbology',
-        'prduct_note',
+        'product_note',
         'enabled',
         'created_by',
         'updated_by',
