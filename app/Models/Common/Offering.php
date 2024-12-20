@@ -10,11 +10,14 @@ use App\Enums\Accounting\AdjustmentType;
 use App\Enums\Common\OfferingType;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Adjustment;
+use App\Observers\OfferingObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
+#[ObservedBy(OfferingObserver::class)]
 class Offering extends Model
 {
     use Blamable;
@@ -91,7 +94,7 @@ class Offering extends Model
 
     public function salesTaxes(): MorphToMany
     {
-        return $this->adjustments()->where('category', AdjustmentCategory::Tax)->where('type', AdjustmentType::Sales);
+        return $this->adjustments()->where('category', AdjustmentCategory::Tax)->where('type', AdjustmentType::Sales)->where('status', 'approved');
     }
 
     public function purchaseTaxes(): MorphToMany

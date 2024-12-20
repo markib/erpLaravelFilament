@@ -47,15 +47,15 @@ class OfferingResource extends Resource
                         // Group these fields together for better layout
                         Forms\Components\Fieldset::make('Details')
                             ->schema([
-                                Forms\Components\Select::make('product_id')
+                                Forms\Components\Select::make('name')
                                     ->label('Name')
-                                    ->options(Product::where('enabled', true)->orderby('product_name')->pluck('product_name', 'id')->toArray()) // Fetch product list
+                                    ->options(Product::where('enabled', true)->orderby('product_name')->pluck('product_name', 'product_name')->toArray()) // Fetch product list
                                     ->searchable()
                                     ->required()
                                     ->reactive() // Makes the field reactive
                                     ->afterStateUpdated(function (Forms\Set $set, $state) {
                                         // Fetch product price and set it to the price field
-                                        $product = Product::find($state);
+                                          $product = Product::where('product_name', $state)->first(); 
                                         if ($product) {
                                             $set('price', $product->product_price);
                                             $set('description', $product->product_note);

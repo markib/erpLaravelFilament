@@ -3,6 +3,7 @@
 namespace Tests;
 
 use App\Models\Company;
+use App\Models\Product\Categories;
 use App\Models\User;
 use App\Testing\TestsReport;
 use Database\Seeders\TestDatabaseSeeder;
@@ -27,6 +28,8 @@ abstract class TestCase extends BaseTestCase
 
     protected User $testUser;
 
+    // protected Categories $testCategory;
+
     protected ?Company $testCompany;
 
     protected function setUp(): void
@@ -36,6 +39,8 @@ abstract class TestCase extends BaseTestCase
         Testable::mixin(new TestsReport);
 
         $this->testUser = User::first();
+
+        // $this->testCategory = Categories::factory()->create();
 
         $this->testCompany = $this->testUser->ownedCompanies->first();
 
