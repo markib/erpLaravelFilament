@@ -10,7 +10,6 @@ use App\Models\Common\Offering;
 use App\Models\Parties\Customer;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
-use Pest\ArchPresets\Custom;
 
 it('allows the user to create a new sales invoice', function () {
 
@@ -51,7 +50,6 @@ it('allows the user to create a new sales invoice', function () {
     expect((float) str_replace(',', '', $invoice->discount_total))->toBe((float) $discountTotal);
     expect((float) str_replace(',', '', $invoice->total))->toBe((float) $grandTotal);
 });
-
 
 it('allows the user to create a new purchases bill', function () {
 
@@ -117,7 +115,7 @@ it('allows the user to edit a sales invoice with valid data', function () {
 
     // Step 3: Update data for the invoice
     $updatedData = [
-        'client_id'=>  $customer->id,
+        'client_id' => $customer->id,
         'header' => 'Updated Invoice Header',
         'subheader' => 'Updated Subheader',
         'date' => now()->toDateString(),
@@ -127,18 +125,18 @@ it('allows the user to edit a sales invoice with valid data', function () {
             ['offering_id' => $offering2->id, 'description' => 'Updated Item 2', 'quantity' => 3, 'unit_price' => 30, 'subtotal' => 90],
         ],
     ];
-    
+
     // Step 4: Interact with the Livewire component of the Filament resource
-    Livewire::test(EditInvoice::class, ['record' => $invoice->id,'company' => 1])
-    ->set('data.client_id', $updatedData['client_id'])
-    ->set('data.header', $updatedData['header'])
-    ->set('data.subheader', $updatedData['subheader'])
-    ->set('data.date', $updatedData['date'])
-    ->set('data.due_date', $updatedData['due_date'])
-    ->set('data.lineItems', $updatedData['lineItems'])
-    ->call('save')
-    ->assertHasNoErrors();
-    
+    Livewire::test(EditInvoice::class, ['record' => $invoice->id, 'company' => 1])
+        ->set('data.client_id', $updatedData['client_id'])
+        ->set('data.header', $updatedData['header'])
+        ->set('data.subheader', $updatedData['subheader'])
+        ->set('data.date', $updatedData['date'])
+        ->set('data.due_date', $updatedData['due_date'])
+        ->set('data.lineItems', $updatedData['lineItems'])
+        ->call('save')
+        ->assertHasNoErrors();
+
     $invoice->refresh();
 
     $subtotal = bcdiv($invoice->lineItems()->sum('subtotal'), '100', 2);
@@ -159,12 +157,12 @@ it('sales invoice update requires client and offering', function () {
     $offering = Offering::factory()->create(['sellable' => true]);
 
     Livewire::test(CreateInvoice::class)
-    ->set('data.client_id', null)
-    ->set('data.lineItems',[
-         ['offering_id' => null, 'description' => 'Test Item', 'quantity' => 1, 'unit_price' => 100, 'subtotal' => 100  ]
-         ])
-    ->call('create')
-    ->assertHasErrors(['data.client_id', 'data.lineItems.0.offering_id']);
+        ->set('data.client_id', null)
+        ->set('data.lineItems', [
+            ['offering_id' => null, 'description' => 'Test Item', 'quantity' => 1, 'unit_price' => 100, 'subtotal' => 100],
+        ])
+        ->call('create')
+        ->assertHasErrors(['data.client_id', 'data.lineItems.0.offering_id']);
 
     $this->assertDatabaseMissing('invoices', [
         'id' => $invoice->id,
@@ -172,7 +170,7 @@ it('sales invoice update requires client and offering', function () {
     ]);
     $this->assertDatabaseMissing('document_line_items', [
         'documentable_id' => $invoice->id,
-        'offering_id' =>  $offering->id
+        'offering_id' => $offering->id,
     ]);
 });
 
@@ -184,7 +182,7 @@ it('updates line items when editing the sales invoice', function () {
     $customer = Customer::factory()->create();
 
     $offering1 = Offering::factory()->create(['sellable' => true]);
-    $offering2 = Offering::factory()->create(['sellable' => true]);    
+    $offering2 = Offering::factory()->create(['sellable' => true]);
 
     // Updated line items data
     $updatedLineItems = [
@@ -195,10 +193,10 @@ it('updates line items when editing the sales invoice', function () {
     // Step 2: Update the invoice
 
     $response = Livewire::test(EditInvoice::class, ['record' => $invoice->id])
-    ->set('data.client_id', $customer->id)
-    ->set('data.lineItems', $updatedLineItems)
-    ->call('save')
-    ->assertHasNoErrors();
+        ->set('data.client_id', $customer->id)
+        ->set('data.lineItems', $updatedLineItems)
+        ->call('save')
+        ->assertHasNoErrors();
 
     $response->assertStatus(200);
 
@@ -209,4 +207,3 @@ it('updates line items when editing the sales invoice', function () {
     expect($invoice->lineItems[0]->description)->toBe('New Item 1');
     expect($invoice->lineItems[1]->quantity)->toBe(4);
 });
-

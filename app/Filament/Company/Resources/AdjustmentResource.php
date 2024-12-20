@@ -2,25 +2,19 @@
 
 namespace App\Filament\Company\Resources;
 
+use App\Enums\Accounting\AdjustmentComputation;
 use App\Filament\Company\Resources\AdjustmentResource\Pages;
-use App\Filament\Company\Resources\AdjustmentResource\RelationManagers;
 use App\Models\Accounting\Adjustment;
-use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\NumberColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DatePicker;
-use App\Enums\Accounting\AdjustmentComputation;
-
+use Filament\Tables\Table;
 
 class AdjustmentResource extends Resource
 {
@@ -34,20 +28,20 @@ class AdjustmentResource extends Resource
             ->schema([
                 // Form fields
                 Select::make('company_id')
-                ->relationship('company', 'name')
+                    ->relationship('company', 'name')
                     ->required(),
                 Select::make('account_id')
-                ->relationship('account', 'name')
+                    ->relationship('account', 'name')
                     ->required(),
                 TextInput::make('name')
                     ->required(),
                 Textarea::make('description'),
                 Select::make('category')
-                ->options([
-                    'tax' => 'Tax',
-                    'discount' => 'Discount',
-                    'adjustment' => 'Adjustment',
-                ])
+                    ->options([
+                        'tax' => 'Tax',
+                        'discount' => 'Discount',
+                        'adjustment' => 'Adjustment',
+                    ])
                     ->required(),
                 Select::make('type')
                     ->options([
@@ -64,37 +58,37 @@ class AdjustmentResource extends Resource
                     ->default('pending')
                     ->required(),
                 Select::make('recoverable')
-                ->options([
-                    'yes' => 'Yes',
-                    'no' => 'No',
-                ])
+                    ->options([
+                        'yes' => 'Yes',
+                        'no' => 'No',
+                    ])
                     ->required(),
                 TextInput::make('rate')->numeric()->required(),
-            Select::make('computation')
-            ->label('Computation Type')
-            ->options([
-                AdjustmentComputation::Percentage->value => 'Percentage',
-                AdjustmentComputation::Fixed->value => 'Fixed',
-            ])
-            ->default(AdjustmentComputation::Fixed->value)  // Optional: set a default value
-            ->required()  // Optional: make it required
-                ->reactive(),  // Optional: if you want to react to changes
+                Select::make('computation')
+                    ->label('Computation Type')
+                    ->options([
+                        AdjustmentComputation::Percentage->value => 'Percentage',
+                        AdjustmentComputation::Fixed->value => 'Fixed',
+                    ])
+                    ->default(AdjustmentComputation::Fixed->value)  // Optional: set a default value
+                    ->required()  // Optional: make it required
+                    ->reactive(),  // Optional: if you want to react to changes
                 DatePicker::make('start_date')->required(),
                 DatePicker::make('end_date')->required(),
                 TextInput::make('transaction_id')
-                ->nullable()
+                    ->nullable()
                     ->numeric(),
                 TextInput::make('previous_quantity')
-                ->nullable()
+                    ->nullable()
                     ->numeric(),
                 TextInput::make('new_quantity')
-                ->nullable()
+                    ->nullable()
                     ->numeric(),
                 TextInput::make('previous_price')
-                ->nullable()
+                    ->nullable()
                     ->numeric(),
                 TextInput::make('new_price')
-                ->nullable()
+                    ->nullable()
                     ->numeric(),
             ]);
     }
@@ -103,35 +97,35 @@ class AdjustmentResource extends Resource
     {
         return $table
             ->columns([
-            TextColumn::make('company.name')->label('Company')->sortable(),
-            TextColumn::make('account.name')->label('Account')->sortable(),
-            TextColumn::make('name')->sortable(),
-            TextColumn::make('category')->sortable(),
-            TextColumn::make('type')->sortable(),
-            TextColumn::make('status')->sortable(),
-            TextColumn::make('created_at')->label('Created At')->date(),
+                TextColumn::make('company.name')->label('Company')->sortable(),
+                TextColumn::make('account.name')->label('Account')->sortable(),
+                TextColumn::make('name')->sortable(),
+                TextColumn::make('category')->sortable(),
+                TextColumn::make('type')->sortable(),
+                TextColumn::make('status')->sortable(),
+                TextColumn::make('created_at')->label('Created At')->date(),
             ])
             ->filters([
-            SelectFilter::make('status')
-                ->options([
-                    'pending' => 'Pending',
-                    'approved' => 'Approved',
-                    'reversed' => 'Reversed',
-                ])
-                ->label('Status'),
-            SelectFilter::make('category')
-                ->options([
-                    'tax' => 'Tax',
-                    'discount' => 'Discount',
-                    'adjustment' => 'Adjustment',
-                ])
-                ->label('Category'),
-            SelectFilter::make('type')
-                ->options([
-                    'sales' => 'Sales',
-                    'purchase' => 'Purchase',
-                ])
-                ->label('Type'),
+                SelectFilter::make('status')
+                    ->options([
+                        'pending' => 'Pending',
+                        'approved' => 'Approved',
+                        'reversed' => 'Reversed',
+                    ])
+                    ->label('Status'),
+                SelectFilter::make('category')
+                    ->options([
+                        'tax' => 'Tax',
+                        'discount' => 'Discount',
+                        'adjustment' => 'Adjustment',
+                    ])
+                    ->label('Category'),
+                SelectFilter::make('type')
+                    ->options([
+                        'sales' => 'Sales',
+                        'purchase' => 'Purchase',
+                    ])
+                    ->label('Type'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -139,16 +133,16 @@ class AdjustmentResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    
+
                 ]),
                 Tables\Actions\BulkAction::make('approve')
-        ->action(function ($records) {
-            foreach ($records as $record) {
-                $record->update(['status' => 'approved']);
-            }
-        })
-        ->label('Approve Selected')
-                
+                    ->action(function ($records) {
+                        foreach ($records as $record) {
+                            $record->update(['status' => 'approved']);
+                        }
+                    })
+                    ->label('Approve Selected'),
+
             ]);
     }
 

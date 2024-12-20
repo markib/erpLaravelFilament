@@ -74,6 +74,7 @@ class Adjustment extends Model
     {
         return $this->belongsTo(Account::class, 'account_id');
     }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -88,7 +89,7 @@ class Adjustment extends Model
     {
         return $this->belongsTo(Transaction::class, 'transaction_id');
     }
-    
+
     public function products(): MorphToMany
     {
         return $this->morphedByMany(Product::class, 'adjustmentable');

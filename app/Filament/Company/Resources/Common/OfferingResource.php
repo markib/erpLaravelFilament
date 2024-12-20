@@ -24,7 +24,9 @@ class OfferingResource extends Resource
     protected static ?string $model = Offering::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
     public $type = 'product';
+
     public static function form(Form $form): Form
     {
 
@@ -38,8 +40,8 @@ class OfferingResource extends Resource
                             ->icons(OfferingType::class)
                             ->required()
                             ->live()
-                            ->extraCardsAttributes(fn($state): array => [
-                               'class' => 'custom-card peer-checked:border-blue-500 peer-checked:bg-blue-100 dark:peer-checked:border-blue-300 dark:peer-checked:bg-blue-900',
+                            ->extraCardsAttributes(fn ($state): array => [
+                                'class' => 'custom-card peer-checked:border-blue-500 peer-checked:bg-blue-100 dark:peer-checked:border-blue-300 dark:peer-checked:bg-blue-900',
                             ])
                             ->columns(),
                         // Group these fields together for better layout
@@ -110,7 +112,7 @@ class OfferingResource extends Resource
                             ->multiple(),
                     ])
                     ->columns()
-                    ->visible(fn(Forms\Get $get) => in_array('Sellable', $get('attributes') ?? [])),
+                    ->visible(fn (Forms\Get $get) => in_array('Sellable', $get('attributes') ?? [])),
 
                 // Purchasable Section
                 Forms\Components\Section::make('Purchase Information')
@@ -141,7 +143,7 @@ class OfferingResource extends Resource
                             ->multiple(),
                     ])
                     ->columns()
-                    ->visible(fn(Forms\Get $get) => in_array('Purchasable', $get('attributes') ?? [])),
+                    ->visible(fn (Forms\Get $get) => in_array('Purchasable', $get('attributes') ?? [])),
             ])->columns();
     }
 

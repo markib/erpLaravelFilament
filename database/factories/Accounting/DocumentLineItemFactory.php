@@ -92,4 +92,3 @@ class DocumentLineItemFactory extends Factory
         });
     }
 }
-

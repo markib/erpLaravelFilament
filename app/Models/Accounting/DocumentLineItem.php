@@ -59,7 +59,6 @@ class DocumentLineItem extends Model
         return $this->belongsTo(Offering::class);
     }
 
-
     // public function product(): BelongsTo
     // {
     //     return $this->belongsTo(Product::class);
