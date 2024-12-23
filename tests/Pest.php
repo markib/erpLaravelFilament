@@ -1,15 +1,12 @@
 <?php
 
 use App\Models\Company;
-use App\Models\Product\Categories;
 use App\Models\User;
+use App\Testing\TestsReport;
+use Database\Seeders\TestDatabaseSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Features\SupportTesting\Testable;
-use Database\Seeders\TestDatabaseSeeder;
-use App\Testing\TestsReport;
-use Database\Seeders\CategorySeeder;
-use PhpParser\Node\Stmt\Catch_;
 
 uses(Tests\TestCase::class)
     ->in('Feature', 'Unit');
@@ -39,8 +36,6 @@ uses(Tests\TestCase::class)
 | global functions to help you to reduce the number of lines of code in your test files.
 |
 */
-
-
 
 // uses(RefreshDatabase::class); // Applying RefreshDatabase globally
 

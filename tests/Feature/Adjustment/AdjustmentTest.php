@@ -10,7 +10,7 @@ use App\Models\User;
 use Livewire\Livewire;
 
 it('check empty form data to adjustment creation form', function () {
-   
+
     $user = User::factory()->create();
     $this->actingAs($user);
 
@@ -27,7 +27,7 @@ it('check empty form data to adjustment creation form', function () {
         ->set('data.computation', null) // Simulate empty computation
         ->set('data.start_date', null)  // Simulate empty start_date
         ->set('data.end_date', null)    // Simulate empty end_date
-        
+
         ->call('create')
         ->assertHasErrors([ // Assert validation errors for required fields
             'data.company_id',
@@ -44,9 +44,8 @@ it('check empty form data to adjustment creation form', function () {
         ]);
 });
 
-
 it('allows the user to create a new adjustments', function () {
-    
+
     // Now, perform the Livewire test on the CreateAdjustment page with valid data
     $validData = [
         'company_id' => $this->testCompany->id, // Use the created tenant
@@ -66,7 +65,7 @@ it('allows the user to create a new adjustments', function () {
         'previous_price' => 50,
         'new_price' => 60,
     ];
-    
+
     // Perform the test
     Livewire::test(CreateAdjustment::class)
         ->set('data', $validData) // Set all form fields with valid data
@@ -87,10 +86,9 @@ it('allows the user to create a new adjustments', function () {
     $this->assertEquals($validData['company_id'], $adjustment->company_id);  // Ensure the company_id is correct
 });
 
-
 it('updates adjustments form data', function () {
     // Create a company, an account, and an adjustment to edit
-   
+
     $account = Account::factory()->create();
     $adjustment = Adjustment::factory()->create([
         'company_id' => $this->testCompany->id,
@@ -128,11 +126,10 @@ it('updates adjustments form data', function () {
     // Step 2: Update the adjustments
 
     // Perform the test on the EditAdjustment page with updated data
-    $response =Livewire::test(EditAdjustment::class, ['record' => $adjustment->id]) // Pass the existing adjustment to edit
-    ->set('data', $updatedData) // Set all form fields with updated data
+    $response = Livewire::test(EditAdjustment::class, ['record' => $adjustment->id]) // Pass the existing adjustment to edit
+        ->set('data', $updatedData) // Set all form fields with updated data
         ->call('save') // Call the update method to update the record
         ->assertHasNoErrors(); // Assert that there are no validation errors
-
 
     $response->assertStatus(200);
 
@@ -150,7 +147,7 @@ it('updates adjustments form data', function () {
         'computation' => $updatedData['computation'],
     ]);
 
-    $adjustment->refresh(); 
+    $adjustment->refresh();
     expect($adjustment->company_id)->toBe($updatedData['company_id']);
     expect($adjustment->name)->toBe($updatedData['name']);
     // expect($adjustment->category)->toBe($updatedData['category']);

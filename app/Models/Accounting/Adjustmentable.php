@@ -9,12 +9,12 @@ class Adjustmentable extends Model
 {
     protected $table = 'adjustmentables';
 
-     protected $fillable = [
+    protected $fillable = [
         'adjustment_id',
         'adjustmentable_id',
         'adjustmentable_type',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     public function adjustments(): MorphMany

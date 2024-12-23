@@ -13,8 +13,8 @@ class TestDatabaseSeeder extends Seeder
 
     public function run(): void
     {
-        
-        $user =  User::factory()
+
+        $user = User::factory()
             ->withPersonalCompany()
             ->create([
                 'name' => 'Test Company Owner',
