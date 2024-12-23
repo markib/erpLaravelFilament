@@ -189,3 +189,33 @@ it('allows the user to bulk delete adjustments', function () {
         ]);
     }
 });
+
+it('allows the user to bulk approve adjustments', function () {
+    // Seed the database with test data
+    $adjustments = Adjustment::factory()->count(3)->create([
+        'company_id' => $this->testCompany->id,
+    ]);
+
+    // Verify the adjustments are in the database
+    foreach ($adjustments as $adjustment) {
+        $this->assertDatabaseHas('adjustments', [
+            'id' => $adjustment->id,
+        ]);
+    }
+
+    // Perform the bulk approve action using Filament's Livewire component
+    Livewire::test(ListAdjustments::class)
+        ->callTableBulkAction(
+            'approve',  // Change 'delete' to 'approve'
+            $adjustments->pluck('id')->toArray()
+        );
+
+    // Verify the adjustments are approved in the database
+    foreach ($adjustments as $adjustment) {
+        // Assuming there's a column 'status' for approval
+        $this->assertDatabaseHas('adjustments', [
+            'id' => $adjustment->id,
+            'status' => 'approved',  // Ensure the status is 'approved'
+        ]);
+    }
+});
