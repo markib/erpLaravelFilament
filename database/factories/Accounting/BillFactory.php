@@ -7,7 +7,6 @@ use App\Enums\Accounting\PaymentMethod;
 use App\Models\Accounting\Bill;
 use App\Models\Accounting\DocumentLineItem;
 use App\Models\Banking\BankAccount;
-use App\Models\Common\Vendor;
 use App\Models\Parties\Supplier;
 use App\Utilities\Currency\CurrencyConverter;
 use Illuminate\Database\Eloquent\Factories\Factory;

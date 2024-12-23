@@ -11,23 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('role_user')) {
-        Schema::create('role_user', function (Blueprint $table) {
+        if (! Schema::hasTable('role_user')) {
+            Schema::create('role_user', function (Blueprint $table) {
 
-            $table->unsignedBigInteger('role_id');
-            $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('company_id')->nullable();
-            $table->timestamps();
+                $table->unsignedBigInteger('role_id');
+                $table->unsignedBigInteger('user_id');
+                $table->unsignedBigInteger('company_id')->nullable();
+                $table->timestamps();
 
-            // Foreign keys
-            $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
+                // Foreign keys
+                $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
+                $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+                $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
 
-            // Optional: Composite primary key
-            $table->primary(['user_id', 'role_id']);
-        });
-    }
+                // Optional: Composite primary key
+                $table->primary(['user_id', 'role_id']);
+            });
+        }
     }
 
     /**

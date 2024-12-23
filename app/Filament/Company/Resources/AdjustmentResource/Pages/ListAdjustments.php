@@ -22,25 +22,25 @@ class ListAdjustments extends ListRecords
     {
         return [
             SelectFilter::make('status')
-            ->options([
-                'pending' => 'Pending',
-                'approved' => 'Approved',
-                'reversed' => 'Reversed',
-            ])
+                ->options([
+                    'pending' => 'Pending',
+                    'approved' => 'Approved',
+                    'reversed' => 'Reversed',
+                ])
                 ->default('pending')
                 ->label('Status'),
             SelectFilter::make('category')
-            ->options([
-                'tax' => 'Tax',
-                'discount' => 'Discount',
-                'adjustment' => 'Adjustment',
-            ])
+                ->options([
+                    'tax' => 'Tax',
+                    'discount' => 'Discount',
+                    'adjustment' => 'Adjustment',
+                ])
                 ->label('Category'),
             SelectFilter::make('type')
-            ->options([
-                'sales' => 'Sales',
-                'purchase' => 'Purchase',
-            ])
+                ->options([
+                    'sales' => 'Sales',
+                    'purchase' => 'Purchase',
+                ])
                 ->label('Type'),
         ];
     }

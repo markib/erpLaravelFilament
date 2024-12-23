@@ -1,5 +1,16 @@
 <?php
 
+use App\Models\Company;
+use App\Models\Product\Categories;
+use App\Models\User;
+use Filament\Facades\Filament;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Features\SupportTesting\Testable;
+use Database\Seeders\TestDatabaseSeeder;
+use App\Testing\TestsReport;
+use Database\Seeders\CategorySeeder;
+use PhpParser\Node\Stmt\Catch_;
+
 uses(Tests\TestCase::class)
     ->in('Feature', 'Unit');
 
@@ -14,9 +25,9 @@ uses(Tests\TestCase::class)
 |
 */
 
-expect()->extend('toBeOne', function () {
-    return $this->toBe(1);
-});
+// expect()->extend('toBeOne', function () {
+//     return $this->toBe(1);
+// });
 
 /*
 |--------------------------------------------------------------------------
@@ -29,7 +40,37 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
-{
-    // ..
-}
+
+
+// uses(RefreshDatabase::class); // Applying RefreshDatabase globally
+
+beforeEach(function () {
+    // Set up the testing environment
+
+    // Optionally run the seeders
+    $this->seed(TestDatabaseSeeder::class);
+
+    // Mix in custom functionality, like the TestsReport
+    Testable::mixin(new TestsReport);
+
+    // Set up the user and company
+    $this->testUser = User::first();
+
+    // Assume the user has at least one owned company
+    $this->testCompany = $this->testUser->ownedCompanies->first();
+
+    // Switch the company for the test user
+    $this->testUser->switchCompany($this->testCompany);
+
+    // Set the user for the session
+    $this->actingAs($this->testUser);
+
+    // Set the tenant (company) for Filament
+    Filament::setTenant($this->testCompany);
+});
+
+// This makes use of the existing functionality and your setup before each test
+it('checks the user and company setup', function () {
+    expect($this->testUser)->not->toBeNull();
+    expect($this->testCompany)->not->toBeNull();
+});

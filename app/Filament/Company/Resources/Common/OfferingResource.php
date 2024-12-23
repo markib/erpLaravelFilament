@@ -24,7 +24,9 @@ class OfferingResource extends Resource
     protected static ?string $model = Offering::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
     public $type = 'product';
+
     public static function form(Form $form): Form
     {
 
@@ -38,22 +40,22 @@ class OfferingResource extends Resource
                             ->icons(OfferingType::class)
                             ->required()
                             ->live()
-                            ->extraCardsAttributes(fn($state): array => [
-                               'class' => 'custom-card peer-checked:border-blue-500 peer-checked:bg-blue-100 dark:peer-checked:border-blue-300 dark:peer-checked:bg-blue-900',
+                            ->extraCardsAttributes(fn ($state): array => [
+                                'class' => 'custom-card peer-checked:border-blue-500 peer-checked:bg-blue-100 dark:peer-checked:border-blue-300 dark:peer-checked:bg-blue-900',
                             ])
                             ->columns(),
                         // Group these fields together for better layout
                         Forms\Components\Fieldset::make('Details')
                             ->schema([
-                                Forms\Components\Select::make('product_id')
+                                Forms\Components\Select::make('name')
                                     ->label('Name')
-                                    ->options(Product::where('enabled', true)->orderby('product_name')->pluck('product_name', 'id')->toArray()) // Fetch product list
+                                    ->options(Product::where('enabled', true)->orderby('product_name')->pluck('product_name', 'product_name')->toArray()) // Fetch product list
                                     ->searchable()
                                     ->required()
                                     ->reactive() // Makes the field reactive
                                     ->afterStateUpdated(function (Forms\Set $set, $state) {
                                         // Fetch product price and set it to the price field
-                                        $product = Product::find($state);
+                                          $product = Product::where('product_name', $state)->first(); 
                                         if ($product) {
                                             $set('price', $product->product_price);
                                             $set('description', $product->product_note);
@@ -110,7 +112,7 @@ class OfferingResource extends Resource
                             ->multiple(),
                     ])
                     ->columns()
-                    ->visible(fn(Forms\Get $get) => in_array('Sellable', $get('attributes') ?? [])),
+                    ->visible(fn (Forms\Get $get) => in_array('Sellable', $get('attributes') ?? [])),
 
                 // Purchasable Section
                 Forms\Components\Section::make('Purchase Information')
@@ -141,7 +143,7 @@ class OfferingResource extends Resource
                             ->multiple(),
                     ])
                     ->columns()
-                    ->visible(fn(Forms\Get $get) => in_array('Purchasable', $get('attributes') ?? [])),
+                    ->visible(fn (Forms\Get $get) => in_array('Purchasable', $get('attributes') ?? [])),
             ])->columns();
     }
 

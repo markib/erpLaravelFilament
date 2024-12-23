@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Product;
 
+use App\Models\Product\Categories;
 use App\Models\Product\Product;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -20,7 +21,7 @@ class ProductFactory extends Factory
     public function definition(): array
     {
         return [
-            'category_id' => null,
+            'category_id' =>Categories::inRandomOrder()->first()->id,
             'product_name' => ucfirst($this->faker->words(3, true)), // e.g., "Wireless Headphones"
             'product_code' => strtoupper($this->faker->unique()->bothify('PRD###')),
             'product_barcode_symbology' => $this->faker->ean13(),
