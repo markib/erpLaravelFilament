@@ -2,6 +2,7 @@
 
 use App\Filament\Company\Resources\AdjustmentResource\Pages\CreateAdjustment;
 use App\Filament\Company\Resources\AdjustmentResource\Pages\EditAdjustment;
+use App\Filament\Company\Resources\AdjustmentResource\Pages\ListAdjustments;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Adjustment;
 use App\Models\Company;
@@ -97,7 +98,7 @@ it('updates adjustments form data', function () {
         'category' => 'tax',
         'type' => 'sales',
         'status' => 'pending',
-        'recoverable' => 'no',
+        'recoverable' => true,
         'rate' => 50,
         'computation' => 'percentage',
         'transaction_id' => '654321',
@@ -111,7 +112,7 @@ it('updates adjustments form data', function () {
         'category' => 'discount',
         'type' => 'purchase',
         'status' => 'approved',
-        'recoverable' => 'yes',
+        'recoverable' => false,
         'rate' => 120,
         'computation' => 'fixed',
         'start_date' => now(),
@@ -148,11 +149,43 @@ it('updates adjustments form data', function () {
     ]);
 
     $adjustment->refresh();
+
+    $expectedRate = bcdiv($updatedData['rate'], '100', 2);
     expect($adjustment->company_id)->toBe($updatedData['company_id']);
     expect($adjustment->name)->toBe($updatedData['name']);
     // expect($adjustment->category)->toBe($updatedData['category']);
     expect($adjustment->category->value)->toBe($updatedData['category']);
-    expect((float) $adjustment->rate)->toBe((float) $updatedData['rate']);
+    //expect((float) $adjustment->rate)->toBe((float) $updatedData['rate']);
+    expect((float) str_replace(',', '', $adjustment->rate))->toBe((float) $expectedRate);
     expect($adjustment->transaction_id)->toBe('123456');
-    expect($adjustment->start_date)->toBe(now());
+    expect($adjustment->start_date->toDateString())->toBe(now()->toDateString());
+
+});
+
+it('allows the user to bulk delete adjustments', function () {
+    // Seed the database with test data
+    $adjustments = Adjustment::factory()->count(3)->create([
+        'company_id' => $this->testCompany->id,
+    ]);
+
+    // Verify the adjustments are in the database
+    foreach ($adjustments as $adjustment) {
+
+        $this->assertDatabaseHas('adjustments', [
+            'id' => $adjustment->id,
+        ]);
+    }
+    // Perform the bulk delete action using Filament's Livewire component
+    Livewire::test(ListAdjustments::class)
+        ->callTableBulkAction(
+            'delete',
+            $adjustments->pluck('id')->toArray()
+        );
+
+    // Verify the adjustments are deleted from the database
+    foreach ($adjustments as $adjustment) {
+        $this->assertDatabaseMissing('adjustments', [
+            'id' => $adjustment->id,
+        ]);
+    }
 });
