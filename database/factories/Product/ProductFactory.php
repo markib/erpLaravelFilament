@@ -21,7 +21,7 @@ class ProductFactory extends Factory
     public function definition(): array
     {
         return [
-            'category_id' =>Categories::inRandomOrder()->first()->id,
+            'category_id' => Categories::inRandomOrder()->first()->id,
             'product_name' => ucfirst($this->faker->words(3, true)), // e.g., "Wireless Headphones"
             'product_code' => strtoupper($this->faker->unique()->bothify('PRD###')),
             'product_barcode_symbology' => $this->faker->ean13(),

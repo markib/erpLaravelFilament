@@ -77,7 +77,7 @@ class AdjustmentResource extends Resource
                 DatePicker::make('end_date')->required(),
                 TextInput::make('transaction_id')
                     ->nullable(),
-                   // ->numeric(),
+                // ->numeric(),
                 TextInput::make('previous_quantity')
                     ->nullable()
                     ->numeric(),

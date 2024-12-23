@@ -55,7 +55,7 @@ class OfferingResource extends Resource
                                     ->reactive() // Makes the field reactive
                                     ->afterStateUpdated(function (Forms\Set $set, $state) {
                                         // Fetch product price and set it to the price field
-                                          $product = Product::where('product_name', $state)->first(); 
+                                        $product = Product::where('product_name', $state)->first();
                                         if ($product) {
                                             $set('price', $product->product_price);
                                             $set('description', $product->product_note);

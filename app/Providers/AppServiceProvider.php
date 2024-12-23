@@ -44,7 +44,7 @@ class AppServiceProvider extends ServiceProvider
             'bill' => Bill::class,
             'bankAccount' => BankAccount::class,
             'journal_entry' => JournalEntry::class,
-            'offering' => Offering::class
+            'offering' => Offering::class,
         ]);
     }
 }
