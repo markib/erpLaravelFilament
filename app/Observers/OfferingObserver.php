@@ -21,6 +21,7 @@ class OfferingObserver
         if (isset($offering->sales_discount_ids)) {
             $offering->salesDiscounts()->sync($offering->sales_discount_ids);
         }
+
     }
 
     public function saving(Offering $offering): void
