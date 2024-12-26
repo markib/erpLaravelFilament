@@ -64,7 +64,9 @@ class OfferingResource extends Resource
                                 Forms\Components\TextInput::make('price')
                                     ->label('Price')
                                     ->required()
-                                    ->money(),
+                                    ->numeric()
+                                    ->default(0)
+                                    ->rules(['numeric', 'min:0.01']),
                                 Forms\Components\Textarea::make('description')
                                     ->label('Description')
                                     ->columnSpan(2)

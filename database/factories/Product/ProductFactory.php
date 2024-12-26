@@ -27,7 +27,7 @@ class ProductFactory extends Factory
             'product_barcode_symbology' => $this->faker->ean13(),
             'product_quantity' => $this->faker->numberBetween(1, 100),
             'product_cost' => $this->faker->randomFloat(2, 10, 500), // Cost between $10 and $500
-            'product_price' => $this->faker->randomFloat(2, 20, 1000), // Price between $20 and $1000
+            'product_price' => $this->faker->randomFloat(2, 1, 999.99),
             'product_unit' => $this->faker->randomElement(['piece', 'box', 'kg']),
             'product_stock_alert' => $this->faker->numberBetween(5, 20),
             'product_order_tax' => $this->faker->numberBetween(1, 15), // Percentage

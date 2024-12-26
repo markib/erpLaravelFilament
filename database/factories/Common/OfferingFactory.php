@@ -23,7 +23,7 @@ class OfferingFactory extends Factory
             'name' => $this->faker->word,  // Ensure this field is being populated
             'description' => $this->faker->sentence,
             'type' => $this->faker->randomElement(OfferingType::cases()),
-            'price' => $this->faker->randomFloat(2, 10, 100),
+            'price' => $this->faker->randomFloat(2, 1, 999.99),
             'sellable' => $this->faker->boolean(80), // 80% chance to be true
             'purchasable' => $this->faker->boolean(20),
             'company_id' => Company::factory(), // Generates a related company

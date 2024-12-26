@@ -12,6 +12,7 @@ use App\Models\Accounting\Account;
 use App\Models\Accounting\Adjustment;
 use App\Observers\OfferingObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -40,10 +41,19 @@ class Offering extends Model
 
     protected $casts = [
         'type' => OfferingType::class,
-        'price' => MoneyCast::class,
+        // 'price' => MoneyCast::class,
         'sellable' => 'boolean',
         'purchasable' => 'boolean',
     ];
+
+    protected $appends = [
+        'formatted_price',
+    ];
+
+    protected function formattedPrice(): Attribute
+    {
+        return Attribute::get(fn ($value, $attributes) => number_format($attributes['product_price'], 2));
+    }
 
     public function clearSellableAdjustments(): void
     {

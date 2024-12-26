@@ -11,6 +11,7 @@ class OfferingObserver
      */
     public function created(Offering $offering): void
     {
+
         // Sync the adjustments when the offering is created
         if (isset($offering->sales_tax_ids)) {
             $offering->salesTaxes()->sync($offering->sales_tax_ids);
@@ -24,6 +25,7 @@ class OfferingObserver
 
     public function saving(Offering $offering): void
     {
+
         $offering->clearSellableAdjustments();
         $offering->clearPurchasableAdjustments();
     }

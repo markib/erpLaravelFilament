@@ -2,6 +2,7 @@
 
 namespace App\Models\Product;
 
+use App\Casts\MoneyCast;
 use App\Concerns\Blamable;
 use App\Concerns\CompanyOwned;
 use App\Concerns\HasDefault;
@@ -45,6 +46,7 @@ class Product extends Model
 
     protected $casts = [
         'enabled' => 'boolean',
+        // 'price' => MoneyCast::class,
     ];
 
     protected $appends = [
