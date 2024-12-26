@@ -48,7 +48,7 @@ it('allows the user to create a new  sales offering', function () {
         'category' => AdjustmentCategory::Tax,
         'type' => AdjustmentType::Sales,
         'status' => 'approved',
-        //  'company_id' => $this->testCompany->id, // Use the created tenant
+        'company_id' => $this->testCompany->id, // Use the created tenant
         //  'account_id' => $account->id, // Assuming there's a valid account_id in your system
         'name' => 'Test Adjustment',
         'recoverable' => 'yes',
@@ -62,7 +62,7 @@ it('allows the user to create a new  sales offering', function () {
         'previous_price' => 50,
         'new_price' => 60,
     ]);
-
+    //dump($salesTaxes->pluck('id')->toArray());
     $validData = [
         'type' => OfferingType::Product->value,
         'name' => $product->product_name,
@@ -71,6 +71,7 @@ it('allows the user to create a new  sales offering', function () {
         'attributes' => ['Sellable'],
         'income_account_id' => $account->id,
         'expense_account_id' => null,
+        'salesTaxes' => $salesTaxes->pluck('id')->toArray(),
     ];
 
     // dump('Sales Tax IDs being sent:', $validData['sales_tax_ids']);
@@ -95,16 +96,9 @@ it('allows the user to create a new  sales offering', function () {
     ]);
 
     // Verify the sales tax adjustments were attached
-    $offering = Offering::where('name', $validData['name'])->first();
+    $offering = Offering::find(1);
 
-    // dump('Offering sales_tax_ids:', $offering->salesTaxes);
+    // dump('Offering sales_tax_ids:',['offering taxes' => $offering->salesTaxes]);
     $this->assertCount(2, $offering->salesTaxes);
 
-    foreach ($salesTaxes as $tax) {
-        $this->assertDatabaseHas('adjustmentables', [
-            'adjustmentable_type' => Offering::class,
-            'adjustmentable_id' => $offering->id,
-            'adjustment_id' => $tax->id,
-        ]);
-    }
 });

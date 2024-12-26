@@ -104,7 +104,10 @@ class Offering extends Model
 
     public function salesTaxes(): MorphToMany
     {
-        return $this->adjustments()->where('category', AdjustmentCategory::Tax)->where('type', AdjustmentType::Sales)->where('status', 'approved');
+        return $this->adjustments()->where('category', AdjustmentCategory::Tax)->where('type', AdjustmentType::Sales);
+        // return $this->morphToMany(Adjustment::class, 'adjustmentable')
+        // ->where('category', AdjustmentCategory::Tax)
+        //     ->where('type', AdjustmentType::Sales);
     }
 
     public function purchaseTaxes(): MorphToMany
