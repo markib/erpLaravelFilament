@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Accounting\AdjustmentComputation;
 use App\Enums\Setting\NumberFormat;
 use App\Models\Setting\Localization;
 use Filament\Support\RawJs;
@@ -44,18 +45,15 @@ if (! function_exists('percentMask')) {
 if (! function_exists('ratePrefix')) {
     function ratePrefix($computation, ?string $currency = null): ?string
     {
-        if ($computation instanceof BackedEnum) {
-            $computation = $computation->value;
+        $computationEnum = AdjustmentComputation::parse($computation);
+        $localization = Localization::firstOrFail();
+
+        if ($computationEnum->isFixed() && currency($currency)->isSymbolFirst()) {
+            return currency($currency)->getPrefix();
         }
 
-        if ($computation === 'fixed') {
-            return currency($currency)->getCodePrefix();
-        }
-
-        if ($computation === 'percentage' || $computation === 'compound') {
-            $percent_first = Localization::firstOrFail()->percent_first;
-
-            return $percent_first ? '%' : null;
+        if ($computationEnum->isPercentage() && $localization->percent_first) {
+            return '%';
         }
 
         return null;
@@ -65,18 +63,15 @@ if (! function_exists('ratePrefix')) {
 if (! function_exists('rateSuffix')) {
     function rateSuffix($computation, ?string $currency = null): ?string
     {
-        if ($computation instanceof BackedEnum) {
-            $computation = $computation->value;
+        $computationEnum = AdjustmentComputation::parse($computation);
+        $localization = Localization::firstOrFail();
+
+        if ($computationEnum->isFixed() && ! currency($currency)->isSymbolFirst()) {
+            return currency($currency)->getSuffix();
         }
 
-        if ($computation === 'percentage' || $computation === 'compound') {
-            $percent_first = Localization::firstOrFail()->percent_first;
-
-            return $percent_first ? null : '%';
-        }
-
-        if ($computation === 'fixed') {
-            return currency($currency)->getCodeSuffix();
+        if ($computationEnum->isPercentage() && ! $localization->percent_first) {
+            return '%';
         }
 
         return null;
@@ -84,19 +79,21 @@ if (! function_exists('rateSuffix')) {
 }
 
 if (! function_exists('rateMask')) {
-    function rateMask($computation, ?string $currency = null): RawJs
+    function rateMask($computation, ?string $currency = null): ?RawJs
     {
-        if ($computation instanceof BackedEnum) {
-            $computation = $computation->value;
-        }
+        $computationEnum = AdjustmentComputation::parse($computation);
 
-        if ($computation === 'percentage' || $computation === 'compound') {
+        if ($computationEnum->isPercentage()) {
             return percentMask(4);
         }
 
-        $precision = currency($currency)->getPrecision();
+        if ($computationEnum->isFixed()) {
+            $precision = currency($currency)->getPrecision();
 
-        return RawJs::make(generateJsCode($precision, $currency));
+            return RawJs::make(generateJsCode($precision, $currency));
+        }
+
+        return null;
     }
 }
 
@@ -107,21 +104,18 @@ if (! function_exists('rateFormat')) {
             return null;
         }
 
-        if ($computation instanceof BackedEnum) {
-            $computation = $computation->value;
+        $computationEnum = AdjustmentComputation::parse($computation);
+        $localization = Localization::firstOrFail();
+
+        if ($computationEnum->isPercentage() && $localization->percent_first) {
+            return '%' . $state;
         }
 
-        if ($computation === 'percentage' || $computation === 'compound') {
-            $percent_first = Localization::firstOrFail()->percent_first;
-
-            if ($percent_first) {
-                return '%' . $state;
-            }
-
+        if ($computationEnum->isPercentage() && ! $localization->percent_first) {
             return $state . '%';
         }
 
-        if ($computation === 'fixed') {
+        if ($computationEnum->isFixed()) {
             return money($state, $currency, true)->formatWithCode();
         }
 

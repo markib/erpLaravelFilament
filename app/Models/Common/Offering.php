@@ -52,7 +52,7 @@ class Offering extends Model
 
     protected function formattedPrice(): Attribute
     {
-        return Attribute::get(fn ($value, $attributes) => number_format($attributes['product_price'], 2));
+        return Attribute::get(fn ($value, $attributes) => number_format($attributes['price'], 2));
     }
 
     public function clearSellableAdjustments(): void

@@ -1101,7 +1101,7 @@ return [
             'symbol' => 'Fr.',
             'symbol_first' => true,
             'decimal_mark' => '.',
-            'thousands_separator' => ',',
+            'thousands_separator' => "'",
         ],
 
         'MOP' => [

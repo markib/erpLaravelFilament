@@ -2,65 +2,53 @@
 
 namespace App\Casts;
 
-use App\Enums\Setting\NumberFormat;
-use App\Models\Setting\Localization;
+use App\Enums\Accounting\AdjustmentComputation;
 use App\Utilities\Currency\CurrencyAccessor;
+use App\Utilities\RateCalculator;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
 
 class RateCast implements CastsAttributes
 {
-    private const PRECISION = 4;
-
     public function get($model, string $key, $value, array $attributes): string
     {
-        $currency_code = $this->getDefaultCurrencyCode();
-        $computation = $attributes['computation'] ?? null;
+        if (! $value) {
+            return '0';
+        }
 
-        if ($computation === 'fixed') {
+        $currency_code = $this->getDefaultCurrencyCode();
+        $computation = AdjustmentComputation::parse($attributes['computation'] ?? $attributes['discount_computation'] ?? null);
+
+        if ($computation?->isFixed()) {
             return money($value, $currency_code)->formatSimple();
         }
 
-        $floatValue = $value / (10 ** self::PRECISION);
-
-        $format = Localization::firstOrFail()->number_format->value;
-        [$decimal_mark, $thousands_separator] = NumberFormat::from($format)->getFormattingParameters();
-
-        return $this->formatWithoutTrailingZeros($floatValue, $decimal_mark, $thousands_separator);
+        return RateCalculator::formatScaledRate($value);
     }
 
     public function set(Model $model, string $key, mixed $value, array $attributes): int
     {
+        if (! $value) {
+            return 0;
+        }
+
         if (is_int($value)) {
             return $value;
         }
 
-        $computation = $attributes['computation'] ?? null;
+        $computation = AdjustmentComputation::parse($attributes['computation'] ?? $attributes['discount_computation'] ?? null);
 
         $currency_code = $this->getDefaultCurrencyCode();
 
-        if ($computation === 'fixed') {
+        if ($computation?->isFixed()) {
             return money($value, $currency_code, true)->getAmount();
         }
 
-        $format = Localization::firstOrFail()->number_format->value;
-        [$decimal_mark, $thousands_separator] = NumberFormat::from($format)->getFormattingParameters();
-
-        $intValue = str_replace([$thousands_separator, $decimal_mark], ['', '.'], $value);
-
-        return (int) round((float) $intValue * (10 ** self::PRECISION));
+        return RateCalculator::parseLocalizedRate($value);
     }
 
     private function getDefaultCurrencyCode(): string
     {
         return CurrencyAccessor::getDefaultCurrency();
-    }
-
-    private function formatWithoutTrailingZeros($floatValue, $decimal_mark, $thousands_separator): string
-    {
-        $formatted = number_format($floatValue, self::PRECISION, $decimal_mark, $thousands_separator);
-        $formatted = rtrim($formatted, '0');
-
-        return rtrim($formatted, $decimal_mark);
     }
 }

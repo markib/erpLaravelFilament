@@ -30,6 +30,7 @@ class CreateCurrencySelect extends Select
 
     protected function createCurrencyForm(): array
     {
+
         return [
             Select::make('code')
                 ->localizeLabel()
