@@ -25,7 +25,7 @@ class TransactionObserver
     public function saving(Transaction $transaction): void
     {
 
-        if ($transaction->type->isDeposit() && $transaction->description && str_contains($transaction->description, 'Invoice')) {
+        if ($transaction->type->isDeposit() && $transaction->description && str_contains($transaction->description, 'Invoice') || str_contains($transaction->description, 'Bill')) {
             // Check if this transaction is related to an invoice
             $invoiceNumber = $this->extractInvoiceNumber($transaction->description); // Helper to extract invoice number
             $invoice = Invoice::where('invoice_number', $invoiceNumber)->first();
