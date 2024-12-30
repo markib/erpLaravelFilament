@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Accounting\AdjustmentComputation;
 use App\Filament\Company\Resources\AdjustmentResource\Pages\CreateAdjustment;
 use App\Filament\Company\Resources\AdjustmentResource\Pages\EditAdjustment;
 use App\Filament\Company\Resources\AdjustmentResource\Pages\ListAdjustments;
@@ -57,7 +58,7 @@ it('allows the user to create a new adjustments', function () {
         'status' => 'pending',
         'recoverable' => 'yes',
         'rate' => 100,
-        'computation' => 'fixed',
+        'computation' => AdjustmentComputation::Fixed->value,
         'start_date' => now(),
         'end_date' => now()->addDays(30),
         'transaction_id' => '123456',
@@ -166,6 +167,7 @@ it('allows the user to bulk delete adjustments', function () {
     // Seed the database with test data
     $adjustments = Adjustment::factory()->count(3)->create([
         'company_id' => $this->testCompany->id,
+        'computation' => AdjustmentComputation::Percentage->value,
     ]);
 
     // Verify the adjustments are in the database

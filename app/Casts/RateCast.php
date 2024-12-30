@@ -17,7 +17,9 @@ class RateCast implements CastsAttributes
         }
 
         $currency_code = $this->getDefaultCurrencyCode();
-        $computation = AdjustmentComputation::parse($attributes['computation'] ?? $attributes['discount_computation'] ?? null);
+        // $computation = AdjustmentComputation::parse($attributes['computation'] ?? $attributes['discount_computation'] ?? null);
+        // Handle null computation value and provide default enum value
+        $computation = AdjustmentComputation::parse($attributes['computation'] ?? $attributes['discount_computation'] ?? AdjustmentComputation::Percentage->value);
 
         if ($computation?->isFixed()) {
             return money($value, $currency_code)->formatSimple();
@@ -36,7 +38,9 @@ class RateCast implements CastsAttributes
             return $value;
         }
 
-        $computation = AdjustmentComputation::parse($attributes['computation'] ?? $attributes['discount_computation'] ?? null);
+        // $computation = AdjustmentComputation::parse($attributes['computation'] ?? $attributes['discount_computation'] ?? null);
+        // Handle null computation value and provide default enum value
+        $computation = AdjustmentComputation::parse($attributes['computation'] ?? $attributes['discount_computation'] ?? AdjustmentComputation::Percentage->value);
 
         $currency_code = $this->getDefaultCurrencyCode();
 

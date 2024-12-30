@@ -22,12 +22,13 @@ class AdjustmentFactory extends Factory
      */
     public function definition(): array
     {
+
         return [
             'account_id' => Account::factory(),
             'type' => $this->faker->randomElement(AdjustmentType::cases()), // Example type for tax or discount
             'category' => $this->faker->randomElement(AdjustmentCategory::cases()), // Example category for tax or discount
             'rate' => $this->faker->randomFloat(2, 5, 20), // Example rate for tax or discount
-            'computation' => $this->faker->randomElement(AdjustmentComputation::cases()),
+            'computation' => $this->faker->randomElement(AdjustmentComputation::cases())->value, // Ensure it's a valid value
             'company_id' => Company::factory(),
             'created_by' => User::factory(),
             'updated_by' => User::factory(),

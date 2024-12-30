@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Accounting;
 
+use App\Enums\Accounting\DocumentDiscountMethod;
 use App\Enums\Accounting\InvoiceStatus;
 use App\Enums\Accounting\PaymentMethod;
 use App\Models\Accounting\DocumentLineItem;
@@ -42,8 +43,11 @@ class InvoiceFactory extends Factory
             'due_date' => Carbon::parse($invoiceDate)->addDays($this->faker->numberBetween(14, 60)),
             'status' => InvoiceStatus::Draft,
             'currency_code' => 'USD',
-            'discount_method' => $this->faker->randomElement(['per_line_item', 'fixed']),
-            'discount_computation' => $this->faker->randomElement(['percentage', 'flat']),
+            'discount_method' => $this->faker->randomElement([
+                DocumentDiscountMethod::PerLineItem->value,
+                DocumentDiscountMethod::PerDocument->value,
+            ]), // Use enum-backed values
+            'discount_computation' => $this->faker->randomElement(['percentage', 'fixed']),
             'discount_rate' => $this->faker->numberBetween(0, 100),
             'terms' => $this->faker->sentence,
             'footer' => $this->faker->sentence,
