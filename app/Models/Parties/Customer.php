@@ -34,6 +34,7 @@ class Customer extends Model
         'enabled',
         'created_by',
         'updated_by',
+        'currency_code',
     ];
 
     protected $casts = [

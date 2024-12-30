@@ -82,6 +82,7 @@ class CurrencyConverter
 
     public static function formatToMoney(string | float $amount, ?string $currency = null): string
     {
+
         $currency ??= CurrencyAccessor::getDefaultCurrency();
 
         return money($amount, $currency, true)->format();

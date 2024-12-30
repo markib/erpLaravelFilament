@@ -3,6 +3,7 @@
 namespace App\Filament\Company\Resources;
 
 use App\Filament\Company\Resources\CustomerResource\Pages;
+use App\Filament\Forms\Components\CreateCurrencySelect;
 use App\Models\Parties\Customer;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -39,6 +40,7 @@ class CustomerResource extends Resource
                 Forms\Components\TextInput::make('country')
                     ->label('Country')
                     ->nullable(),
+                CreateCurrencySelect::make('currency_code'),
             ]);
     }
 

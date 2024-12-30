@@ -54,6 +54,7 @@ class CurrencyAccessor
     public static function getDefaultCurrency(): ?string
     {
         $companyId = auth()->user()?->currentCompany?->id;
+
         $cacheKey = "default_currency_{$companyId}";
 
         if ($companyId === null) {

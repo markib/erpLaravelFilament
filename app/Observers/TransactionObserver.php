@@ -24,14 +24,25 @@ class TransactionObserver
      */
     public function saving(Transaction $transaction): void
     {
-        if ($transaction->type->isDeposit() || $transaction->type->isWithdrawal() || $transaction->type->isTransfer()) {
-            $transaction->transactionable_type = 'bankAccount';
-            $transaction->transactionable_id = $transaction->account_id;
+
+        if ($transaction->type->isDeposit() && $transaction->description && str_contains($transaction->description, 'Invoice')) {
+            // Check if this transaction is related to an invoice
+            $invoiceNumber = $this->extractInvoiceNumber($transaction->description); // Helper to extract invoice number
+            $invoice = Invoice::where('invoice_number', $invoiceNumber)->first();
+
+            if ($invoice) {
+                $transaction->transactionable_type = 'invoice';
+                $transaction->transactionable_id = $invoice->id;
+            }
+        } elseif ($transaction->type->isDeposit() || $transaction->type->isWithdrawal() || $transaction->type->isTransfer()) {
+            $transaction->transactionable_type = BankAccount::class;
+            $transaction->transactionable_id = $transaction->bank_account_id;
         }
 
         if ($transaction->type->isTransfer() && $transaction->description === null) {
             $transaction->description = 'Account Transfer';
         }
+
     }
 
     /**
@@ -43,8 +54,10 @@ class TransactionObserver
         $this->transactionService->createJournalEntries($transaction);
 
         if (! $transaction->transactionable_type) {
-            $transaction->transactionable_type = BankAccount::class;  // Or dynamically set based on your logic
+            //  $transaction->transactionable_type = BankAccount::class;  // Or dynamically set based on your logic
+            return;
         }
+
         $document = $transaction->transactionable;
 
         if ($document instanceof invoice) {
@@ -109,6 +122,7 @@ class TransactionObserver
 
     protected function updateInvoiceTotals(Invoice $invoice, ?Transaction $excludedTransaction = null): void
     {
+
         if (! $invoice->hasPayments()) {
             return;
         }
@@ -144,6 +158,7 @@ class TransactionObserver
             'status' => $newStatus,
             'paid_at' => $paidAt,
         ]);
+
     }
 
     protected function updateBillTotals(Bill $bill, ?Transaction $excludedTransaction = null): void
@@ -177,5 +192,15 @@ class TransactionObserver
             'status' => $newStatus,
             'paid_at' => $paidAt,
         ]);
+    }
+
+    // Helper function to extract the invoice number from the description
+    protected function extractInvoiceNumber(string $description): ?string
+    {
+        if (preg_match('/Invoice #(\S+):/', $description, $matches)) {
+            return $matches[1];
+        }
+
+        return null;
     }
 }
