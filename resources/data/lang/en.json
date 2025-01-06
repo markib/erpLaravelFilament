@@ -215,5 +215,11 @@
     "Invoice Footer": "Invoice Footer",
     "Sale Information": "Sale Information",
     "Purchase Information": "Purchase Information",
-    "Bill Details": "Bill Details"
+    "Bill Details": "Bill Details",
+    "Inventory": "Inventory",
+    "Pricing": "Pricing",
+    "More": "More",
+    "Estimate Header": "Estimate Header",
+    "Estimate Details": "Estimate Details",
+    "Estimate Footer": "Estimate Footer"
 }

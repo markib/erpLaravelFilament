@@ -7,6 +7,7 @@ use App\Models\Accounting\Invoice;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Banking\BankAccount;
 use App\Models\Common\Offering;
+use App\Models\Product\Product;
 use App\Services\DateRangeService;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse;
 use Filament\Notifications\Livewire\Notifications;
@@ -45,6 +46,7 @@ class AppServiceProvider extends ServiceProvider
             'bankAccount' => BankAccount::class,
             'journal_entry' => JournalEntry::class,
             'offering' => Offering::class,
+            'product' => Product::class,
         ]);
     }
 }

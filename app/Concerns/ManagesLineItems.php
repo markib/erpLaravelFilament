@@ -24,6 +24,7 @@ trait ManagesLineItems
 
             $lineItem->fill([
                 'offering_id' => $itemData['offering_id'],
+                'product_id' => $itemData['product_id'],
                 'description' => $itemData['description'],
                 'quantity' => $itemData['quantity'],
                 'unit_price' => $itemData['unit_price'],

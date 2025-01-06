@@ -2,8 +2,11 @@
 
 namespace App\Filament\Company\Resources;
 
+use App\Enums\Accounting\AccountCategory;
+use App\Enums\Accounting\AccountType;
 use App\Filament\Company\Resources\ProductRelationManagerResource\RelationManagers\CategoryRelationManager;
 use App\Filament\Company\Resources\ProductResource\Pages;
+use App\Models\Accounting\Account;
 use App\Models\Product\Categories;
 use App\Models\Product\Product;
 use App\Models\Setting\Unit;
@@ -11,6 +14,7 @@ use Filament\Forms;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\Alignment;
 use Filament\Tables;
@@ -35,93 +39,186 @@ class ProductResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([Forms\Components\TextInput::make('product_name')
-                ->label('Product Name')
-                ->required()
-                ->maxLength(255),
+            ->schema([Forms\Components\Section::make()
+                ->schema([
+                    Forms\Components\Fieldset::make('Details')
+                        ->schema([
+                            Forms\Components\TextInput::make('product_name')
+                                ->label('Product Name')
+                                ->required()
+                                ->maxLength(255),
 
-                Forms\Components\TextInput::make('product_code')
-                    ->label('Product Code')
-                    ->unique(ignorable: fn ($record) => $record)
-                    ->nullable(),
+                            Forms\Components\TextInput::make('product_code')
+                                ->label('Product Code')
+                                ->unique(ignorable: fn ($record) => $record)
+                                ->nullable(),
 
-                Forms\Components\Select::make('category_id')
-                    ->label('Category')
-                    ->relationship('category', 'category_name')
-                    ->required()
-                    ->preload()
-                    ->createOptionForm([
+                            Forms\Components\Select::make('category_id')
+                                ->label('Category')
+                                ->relationship('category', 'category_name')
+                                ->required()
+                                ->preload()
+                                ->createOptionForm([
 
-                        Forms\Components\TextInput::make('category_name')->required(),
-                        Forms\Components\TextInput::make('category_code')->required(),
+                                    Forms\Components\TextInput::make('category_name')->required(),
+                                    Forms\Components\TextInput::make('category_code')->required(),
 
+                                ])
+                                ->createOptionUsing(function (array $data) {
+
+                                    return Categories::create($data)->id; // Return the ID of the newly created category
+
+                                }),
+                            Forms\Components\TextInput::make('product_barcode_symbology')
+                                ->required()
+                                ->label('Barcode Symbology'),
+                        ])
+                        ->columns(2),
+                    Forms\Components\CheckboxList::make('attributes')
+                        ->options([
+                            'Sellable' => 'Sellable',
+                            'Purchasable' => 'Purchasable',
+                        ])
+                        ->hiddenLabel()
+                        ->required()
+                        ->live()
+                        ->bulkToggleable()
+                        ->validationMessages([
+                            'required' => 'The offering must be either sellable or purchasable.',
+                        ]),
+
+                ])->columns(),
+                // Sellable Section
+                Forms\Components\Section::make('Sale Information')
+                    ->schema([
+                        Forms\Components\Select::make('income_account_id')
+                            ->label('Income Account')
+                            ->options(Account::query()
+                                ->where('category', AccountCategory::Revenue)
+                                ->where('type', AccountType::OperatingRevenue)
+                                ->pluck('name', 'id')
+                                ->toArray())
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->validationMessages([
+                                'required' => 'The income account is required for sellable offerings.',
+                            ]),
+                        Forms\Components\Select::make('salesTaxes')
+                            ->label('Sales Tax')
+                            ->relationship('salesTaxes', 'name')
+                            ->preload()
+                            ->multiple(),
+                        Forms\Components\Select::make('salesDiscounts')
+                            ->label('Sales Discount')
+                            ->relationship('salesDiscounts', 'name')
+                            ->preload()
+                            ->multiple(),
+                        Forms\Components\TextInput::make('product_price')
+                            ->required()
+                            ->label('Price')
+                            ->numeric()
+                            ->default(0),
                     ])
-                    ->createOptionUsing(function (array $data) {
+                    ->columns()
+                    ->visible(fn (Forms\Get $get) => in_array('Sellable', $get('attributes') ?? [])),
+                // Purchasable Section
+                Forms\Components\Section::make('Purchase Information')
+                    ->schema([
+                        Forms\Components\Select::make('inventory_account_id')
+                            ->label('Expense Account')
+                            ->options(Account::query()
+                                ->where('category', AccountCategory::Asset)
+                                ->where('type', AccountType::CurrentAsset)
+                                ->orderBy('name')
+                                ->pluck('name', 'id')
+                                ->toArray())
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->validationMessages([
+                                'required' => 'The expense account is required for purchasable products.',
+                            ]),
+                        Forms\Components\Select::make('purchaseTaxes')
+                            ->label('Purchase Tax')
+                            ->relationship('purchaseTaxes', 'name')
+                            ->preload()
+                            ->multiple(),
+                        Forms\Components\Select::make('purchaseDiscounts')
+                            ->label('Purchase Discount')
+                            ->relationship('purchaseDiscounts', 'name')
+                            ->preload()
+                            ->multiple(),
+                        Forms\Components\TextInput::make('product_cost')
+                            ->required()
+                            ->label('Cost')
+                            ->numeric()
+                            ->default(0),
+                    ])
+                    ->columns()
+                    ->visible(fn (Forms\Get $get) => in_array('Purchasable', $get('attributes') ?? [])),
 
-                        return Categories::create($data)->id; // Return the ID of the newly created category
+                Forms\Components\Section::make('Inventory')
+                    ->schema([
+                        Forms\Components\TextInput::make('sku')
+                            ->label('SKU (Stock Keeping Unit)')
+                            ->unique(Product::class, 'sku', ignoreRecord: true)
+                            ->required(),
+                        Forms\Components\TextInput::make('product_quantity')
+                            ->required()
+                            ->label('Quantity')
+                            ->numeric()
+                            ->default(0)
+                            ->disabled(fn (Get $get): bool => $get('id') !== null) // Disable if product exists
+                            ->dehydrated(fn (Get $get): bool => $get('id') === null), // Only include in form submission if new product,
 
-                    }),
-                Forms\Components\TextInput::make('product_barcode_symbology')
-                    ->required()
-                    ->label('Barcode Symbology'),
+                        Forms\Components\TextInput::make('product_stock_alert')
+                            ->required()
+                            ->label('Stock Alert')
+                            ->numeric()
+                            ->default(0),
+                        Forms\Components\Select::make('product_unit')
+                            ->required()
+                            ->label('Unit')
+                            ->options(Unit::pluck('name', 'id')->toArray()),
+                    ])
+                    ->collapsed()
+                    ->columns(2),
+                Forms\Components\Section::make('More')
+                    ->schema([
+                        Forms\Components\TextInput::make('product_order_tax')
+                            ->label('Tax(%)')
+                            ->numeric()
+                            ->default(0),
+                        Forms\Components\Select::make('product_tax_type')
+                            ->label('Tax Type')
+                            ->options(['Exclusive', 'Inclusive']),
+                        Forms\Components\Textarea::make('product_note')
+                            ->label('Note')
+                            ->maxLength(65535),
+                        Toggle::make('enabled')
+                            ->label('Enabled')
+                            ->onColor('success')
+                            ->offColor('danger')
+                            ->inline(false),
+                        // ->default(true),
+                        Forms\Components\Group::make([
+                            Forms\Components\DatePicker::make('created_at')
+                                ->label('Created At')
+                                ->disabled()
+                                ->visible(fn (Forms\Get $get): bool => filled($get('created_at')))
+                                ->displayFormat('d-m-Y H:i:s'),
 
-                Forms\Components\Select::make('product_unit')
-                    ->required()
-                    ->label('Unit')
-                    ->options(Unit::pluck('name', 'id')->toArray()),
-                Forms\Components\TextInput::make('product_cost')
-                    ->required()
-                    ->label('Cost')
-                    ->numeric()
-                    ->default(0),
-                Forms\Components\TextInput::make('product_price')
-                    ->required()
-                    ->label('Price')
-                    ->numeric()
-                    ->default(0),
+                            Forms\Components\DatePicker::make('updated_at')
+                                ->label('Updated At')
+                                ->disabled()
+                                ->visible(fn (Forms\Get $get): bool => filled($get('updated_at')))
+                                ->displayFormat('d-m-Y H:i:s'),
 
-                Forms\Components\TextInput::make('product_quantity')
-                    ->required()
-                    ->label('Quantity')
-                    ->numeric()
-                    ->default(0),
-
-                Forms\Components\TextInput::make('product_stock_alert')
-                    ->required()
-                    ->label('Stock Alert')
-                    ->numeric()
-                    ->default(0),
-                Forms\Components\TextInput::make('product_order_tax')
-                    ->label('Tax(%)')
-                    ->numeric()
-                    ->default(0),
-                Forms\Components\Select::make('product_tax_type')
-                    ->label('Tax Type')
-                    ->options(['Exclusive', 'Inclusive']),
-                Forms\Components\Textarea::make('product_note')
-                    ->label('Note')
-                    ->maxLength(65535),
-                Toggle::make('enabled')
-                    ->label('Enabled')
-                    ->onColor('success')
-                    ->offColor('danger')
-                    ->inline(false),
-                // ->default(true),
-                Forms\Components\Group::make([
-                    Forms\Components\DatePicker::make('created_at')
-                        ->label('Created At')
-                        ->disabled()
-                        ->visible(fn (Forms\Get $get): bool => filled($get('created_at')))
-                        ->displayFormat('d-m-Y H:i:s'),
-
-                    Forms\Components\DatePicker::make('updated_at')
-                        ->label('Updated At')
-                        ->disabled()
-                        ->visible(fn (Forms\Get $get): bool => filled($get('updated_at')))
-                        ->displayFormat('d-m-Y H:i:s'),
-
-                ])->columnSpan(1),
-
+                        ])->columnSpan(1),
+                    ])
+                    ->columns(2)
+                    ->collapsed(),
             ]);
     }
 

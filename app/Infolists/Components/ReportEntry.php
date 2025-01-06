@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Infolists\Components;
+namespace App\Filament\Infolists\Components;
 
 use Filament\Infolists\Components\Entry;
 use Filament\Support\Concerns\HasDescription;
@@ -15,5 +15,5 @@ class ReportEntry extends Entry
     use HasIcon;
     use HasIconColor;
 
-    protected string $view = 'infolists.components.report-entry';
+    protected string $view = 'filament.infolists.components.report-entry';
 }
