@@ -97,7 +97,7 @@ class DocumentLineItem extends Model
     }
 
     public function purchaseTaxes(): MorphToMany
-    {   
+    {
         return $this->adjustments()->where('category', AdjustmentCategory::Tax)->where('type', AdjustmentType::Purchase);
     }
 

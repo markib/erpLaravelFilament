@@ -49,7 +49,7 @@ class AppServiceProvider extends ServiceProvider
             'offering' => Offering::class,
             'product' => Product::class,
             'estimate' => Estimate::class,
-            
+
         ]);
     }
 }

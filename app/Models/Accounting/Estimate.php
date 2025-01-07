@@ -445,6 +445,7 @@ class Estimate extends Model
             'footer' => $this->footer,
             'created_by' => auth()->id(),
             'updated_by' => auth()->id(),
+            'item_type' => $this->item_type,
         ]);
 
         $this->replicateLineItems($invoice);

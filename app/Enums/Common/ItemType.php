@@ -2,13 +2,10 @@
 
 namespace App\Enums\Common;
 
-
 use Filament\Support\Contracts\HasLabel;
 
 enum ItemType: string implements HasLabel
 {
-    
-
     case offering = 'Offering';
     case inventory_product = 'inventory_product';
 

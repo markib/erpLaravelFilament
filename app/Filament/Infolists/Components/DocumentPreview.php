@@ -20,6 +20,7 @@ class DocumentPreview extends Grid
 
     public function type(DocumentType | string $type): static
     {
+
         if (is_string($type)) {
             $type = DocumentType::from($type);
         }

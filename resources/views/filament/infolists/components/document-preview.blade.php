@@ -3,6 +3,7 @@ use App\View\Models\DocumentPreviewViewModel;
 use App\Enums\Accounting\DocumentType;
 
 $type = $getType();
+
 $viewModel = new DocumentPreviewViewModel($getRecord(), $type);
 extract($viewModel->buildViewData(), EXTR_SKIP);
 @endphp

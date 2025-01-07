@@ -107,7 +107,7 @@ use App\Utilities\Currency\CurrencyConverter;
                 @foreach($invoice->lineItems as $index => $item)
                 <tr @class(['bg-gray-100 dark:bg-gray-800'=> $index % 2 === 0])>
                     <td class="text-left pl-6 font-semibold py-3">
-                        {{ $item->offering->name }}
+                        {{ $item->offering->name ?? $item->product->product_name }}
                         @if($item->description)
                         <div class="text-gray-600 font-normal line-clamp-2 mt-1">{{ $item->description }}</div>
                         @endif

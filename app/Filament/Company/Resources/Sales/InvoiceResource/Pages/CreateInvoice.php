@@ -25,12 +25,6 @@ class CreateInvoice extends CreateRecord
     protected function handleRecordCreation(array $data): Model
     {
 
-        // // Ensure salesTaxes are included in each line item
-        // $lineItems = collect($data['lineItems'] ?? []);
-        // $lineItems->each(function (&$lineItem) { // Pass by reference to modify each item
-        //     $lineItem['salesTaxes'] = $lineItem['salesTaxes'] ?? []; // Add default value if not set
-        // });
-
         /** @var Invoice $record */
         $record = parent::handleRecordCreation($data);
 
