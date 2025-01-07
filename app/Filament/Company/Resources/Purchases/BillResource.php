@@ -6,6 +6,7 @@ use App\Enums\Accounting\BillStatus;
 use App\Enums\Accounting\DocumentDiscountMethod;
 use App\Enums\Accounting\DocumentType;
 use App\Enums\Accounting\PaymentMethod;
+use App\Enums\Common\ItemType;
 use App\Filament\Company\Resources\Purchases\BillResource\Pages;
 use App\Filament\Forms\Components\CreateCurrencySelect;
 use App\Filament\Forms\Components\DocumentTotals;
@@ -72,8 +73,27 @@ class BillResource extends Resource
                                         }
                                     }),
                                 CreateCurrencySelect::make('currency_code'),
+                        Forms\Components\Placeholder::make('')->extraAttributes(['class' => 'h-32 mt-8']),
+                        Forms\Components\Select::make('item_type')
+                        ->label('Item Type')
+                        ->options(ItemType::class)
+                        ->selectablePlaceholder(false)
+                        ->default(ItemType::inventory_product->value)
+                        ->required()
+                            ->reactive()
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
 
+                                //  $set('lineItems.*', []);
+                                $set('hidden_item_type', $state ?? $get('item_type'));
+                                $set('quantity', 1);
+                                $set('lineItems.*.description', null);
+                                $set('lineItems.*.unit_price', null);
+                                $set('lineItems.*.purchaseDiscounts', []);
+                                $set('lineItems.*.purchaseTaxes', []);
+                            }),
                             ]),
+                    
                             Forms\Components\Group::make([
                                 Forms\Components\TextInput::make('bill_number')
                                     ->label('Bill Number')
@@ -108,35 +128,10 @@ class BillResource extends Resource
                                         }
                                     })
                                     ->live(),
-                                Forms\Components\Select::make('item_type')
-                                    ->label('Item Type')
-                                    ->options([
-                                        'offering' => 'Offering',
-                                        'inventory_product' => 'Inventory Product',
-                                    ])
-                                    ->selectablePlaceholder(false)
-                                    ->default('offering')
-                                    ->required()
-                                    ->reactive()
-                                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                        //  $set('lineItems.*', []);
-                                        $set('hidden_item_type', $state ?? $get('item_type'));
-                                        $set('quantity', 1);
-                                        $set('lineItems.*.description', null);
-                                        $set('lineItems.*.unit_price', null);
-                                        $set('lineItems.*.purchaseDiscounts', []);
-                                        $set('lineItems.*.purchaseTaxes', []);
-
-                                    })->live(),
-
+                       
                             ])->grow(true),
                         ])->from('md'),
 
-                        Forms\Components\Hidden::make('hidden_item_type')
-                            ->afterStateHydrated(function (Forms\Get $get, Forms\Set $set) {
-                                // Set the initial value of the hidden field on page load
-                                $set('hidden_item_type', $get('item_type'));
-                            }),
                         TableRepeater::make('lineItems')
                             ->relationship()
                             ->saveRelationshipsUsing(null)
@@ -258,7 +253,10 @@ class BillResource extends Resource
 
                                         return CurrencyConverter::formatCentsToMoney($totalInCents, $currencyCode);
                                     }),
-                            ])->visible(fn (Get $get) => $get('hidden_item_type') === 'offering'),
+                            ])->visible(function ($get) {
+                        $itemType = $get('item_type');
+                        return $itemType === ItemType::offering->value;
+                    }),
 
                         TableRepeater::make('lineItems')
                             ->relationship()
@@ -381,7 +379,10 @@ class BillResource extends Resource
 
                                         return CurrencyConverter::formatCentsToMoney($totalInCents, $currencyCode);
                                     }),
-                            ])->visible(fn (Get $get) => $get('hidden_item_type') === 'inventory_product'),
+                            ])->visible(function ($get) {
+                        $itemType = $get('item_type');
+                        return $itemType === ItemType::inventory_product->value;
+                    }),
                         DocumentTotals::make()
                             ->type(DocumentType::Bill),
                     ]),

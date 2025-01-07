@@ -64,7 +64,7 @@ trait ManagesLineItems
         $taxType = $isBill ? 'purchaseTaxes' : 'salesTaxes';
         $discountType = $isBill ? 'purchaseDiscounts' : 'salesDiscounts';
 
-        // logger()->info('Item Data:', ['data' => $itemData]);
+        
 
         // if (! isset($itemData[$taxType])) {
         //     logger()->warning('Tax type key missing in item data', ['key' => $taxType]);

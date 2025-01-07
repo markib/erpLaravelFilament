@@ -4,6 +4,7 @@ namespace App\Filament\Company\Resources\Sales\EstimateResource\Pages;
 
 use App\Concerns\ManagesLineItems;
 use App\Concerns\RedirectToListPage;
+use App\Enums\Common\ItemType;
 use App\Filament\Company\Resources\Sales\EstimateResource;
 use App\Models\Accounting\Estimate;
 use Filament\Actions;
@@ -35,6 +36,8 @@ class EditEstimate extends EditRecord
         /** @var Estimate $record */
         $lineItems = collect($data['lineItems'] ?? []);
 
+          
+
         $this->deleteRemovedLineItems($record, $lineItems);
 
         $this->handleLineItems($record, $lineItems);
@@ -45,4 +48,10 @@ class EditEstimate extends EditRecord
 
         return parent::handleRecordUpdate($record, $data);
     }
+
+    // protected function mutateFormDataBeforeFill(array $data): array
+    // {
+    //     logger()->info('mutateFormDataBeforeFill', $data);
+    //     return $data;
+    // }
 }

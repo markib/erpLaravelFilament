@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Accounting\Bill;
+use App\Models\Accounting\Estimate;
 use App\Models\Accounting\Invoice;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Banking\BankAccount;
@@ -47,6 +48,8 @@ class AppServiceProvider extends ServiceProvider
             'journal_entry' => JournalEntry::class,
             'offering' => Offering::class,
             'product' => Product::class,
+            'estimate' => Estimate::class,
+            
         ]);
     }
 }

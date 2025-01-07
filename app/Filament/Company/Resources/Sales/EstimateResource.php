@@ -4,6 +4,7 @@ namespace App\Filament\Company\Resources\Sales;
 
 use App\Enums\Accounting\DocumentDiscountMethod;
 use App\Enums\Accounting\DocumentType;
+use App\Enums\Common\ItemType;
 use App\Enums\Accounting\EstimateStatus;
 use App\Filament\Company\Resources\Sales\EstimateResource\Pages;
 use App\Filament\Company\Resources\Sales\EstimateResource\Widgets;
@@ -14,6 +15,7 @@ use App\Filament\Tables\Filters\DateRangeFilter;
 use App\Models\Accounting\Adjustment;
 use App\Models\Accounting\Estimate;
 use App\Models\Common\Offering;
+use App\Models\Product\Product;
 use App\Models\Parties\Customer;
 use App\Utilities\Currency\CurrencyAccessor;
 use App\Utilities\Currency\CurrencyConverter;
@@ -23,6 +25,8 @@ use Awcodes\TableRepeater\Header;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\MaxWidth;
@@ -109,6 +113,26 @@ class EstimateResource extends Resource
                                         }
                                     }),
                                 CreateCurrencySelect::make('currency_code'),
+                                Forms\Components\Placeholder::make('')->extraAttributes(['class' => 'h-32 mt-8']),
+
+                                Forms\Components\Select::make('item_type')
+                                    ->label('Item Type')
+                                    ->options(ItemType::class)
+                                    ->selectablePlaceholder(false)
+                                    ->default(ItemType::inventory_product->value)
+                                    ->required()
+                                    ->reactive()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                        //  $set('lineItems.*', []);
+                                       
+                                        // $set('hidden_item_type', $state?->value ?? $get('item_type')?->value);
+                                        $set('quantity', 1);
+                                        $set('lineItems.*.description', null);
+                                        $set('lineItems.*.unit_price', null);
+                                        $set('lineItems.*.salesDiscounts', []);
+                                        $set('lineItems.*.salesTaxes', []);
+                                    }),
                             ]),
                             Forms\Components\Group::make([
                                 Forms\Components\TextInput::make('estimate_number')
@@ -151,128 +175,20 @@ class EstimateResource extends Resource
                                     ->live(),
                             ])->grow(true),
                         ])->from('md'),
-                        TableRepeater::make('lineItems')
-                            ->relationship()
-                            ->saveRelationshipsUsing(null)
-                            ->dehydrated(true)
-                            ->headers(function (Forms\Get $get) {
-                                $hasDiscounts = DocumentDiscountMethod::parse($get('discount_method'))->isPerLineItem();
 
-                                $headers = [
-                                    Header::make('Items')->width($hasDiscounts ? '15%' : '20%'),
-                                    Header::make('Description')->width($hasDiscounts ? '25%' : '30%'),  // Increase when no discounts
-                                    Header::make('Quantity')->width('10%'),
-                                    Header::make('Price')->width('10%'),
-                                    Header::make('Taxes')->width($hasDiscounts ? '15%' : '20%'),       // Increase when no discounts
-                                ];
-
-                                if ($hasDiscounts) {
-                                    $headers[] = Header::make('Discounts')->width('15%');
-                                }
-
-                                $headers[] = Header::make('Amount')->width('10%')->align('right');
-
-                                return $headers;
-                            })
-                            ->schema([
-                                Forms\Components\Select::make('offering_id')
-                                    ->relationship('sellableOffering', 'name')
-                                    ->preload()
-                                    ->searchable()
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
-                                        $offeringId = $state;
-                                        $offeringRecord = Offering::with(['salesTaxes', 'salesDiscounts'])->find($offeringId);
-
-                                        if ($offeringRecord) {
-                                            $set('description', $offeringRecord->description);
-                                            $set('unit_price', $offeringRecord->price);
-                                            $set('salesTaxes', $offeringRecord->salesTaxes->pluck('id')->toArray());
-
-                                            $discountMethod = DocumentDiscountMethod::parse($get('../../discount_method'));
-                                            if ($discountMethod->isPerLineItem()) {
-                                                $set('salesDiscounts', $offeringRecord->salesDiscounts->pluck('id')->toArray());
-                                            }
-                                        }
-                                    }),
-                                Forms\Components\TextInput::make('description'),
-                                Forms\Components\TextInput::make('quantity')
-                                    ->required()
-                                    ->numeric()
-                                    ->live()
-                                    ->default(1),
-                                Forms\Components\TextInput::make('unit_price')
-                                    ->hiddenLabel()
-                                    ->numeric()
-                                    ->live()
-                                    ->default(0),
-                                Forms\Components\Select::make('salesTaxes')
-                                    ->relationship('salesTaxes', 'name')
-                                    ->saveRelationshipsUsing(null)
-                                    ->dehydrated(true)
-                                    ->preload()
-                                    ->multiple()
-                                    ->live()
-                                    ->searchable(),
-                                Forms\Components\Select::make('salesDiscounts')
-                                    ->relationship('salesDiscounts', 'name')
-                                    ->saveRelationshipsUsing(null)
-                                    ->dehydrated(true)
-                                    ->preload()
-                                    ->multiple()
-                                    ->live()
-                                    ->hidden(function (Forms\Get $get) {
-                                        $discountMethod = DocumentDiscountMethod::parse($get('../../discount_method'));
-
-                                        return $discountMethod->isPerDocument();
-                                    })
-                                    ->searchable(),
-                                Forms\Components\Placeholder::make('total')
-                                    ->hiddenLabel()
-                                    ->extraAttributes(['class' => 'text-left sm:text-right'])
-                                    ->content(function (Forms\Get $get) {
-                                        $quantity = max((float) ($get('quantity') ?? 0), 0);
-                                        $unitPrice = max((float) ($get('unit_price') ?? 0), 0);
-                                        $salesTaxes = $get('salesTaxes') ?? [];
-                                        $salesDiscounts = $get('salesDiscounts') ?? [];
-                                        $currencyCode = $get('../../currency_code') ?? CurrencyAccessor::getDefaultCurrency();
-
-                                        $subtotal = $quantity * $unitPrice;
-
-                                        $subtotalInCents = CurrencyConverter::convertToCents($subtotal, $currencyCode);
-
-                                        $taxAmountInCents = Adjustment::whereIn('id', $salesTaxes)
-                                            ->get()
-                                            ->sum(function (Adjustment $adjustment) use ($subtotalInCents) {
-                                                if ($adjustment->computation->isPercentage()) {
-                                                    return RateCalculator::calculatePercentage($subtotalInCents, $adjustment->getRawOriginal('rate'));
-                                                } else {
-                                                    return $adjustment->getRawOriginal('rate');
-                                                }
-                                            });
-
-                                        $discountAmountInCents = Adjustment::whereIn('id', $salesDiscounts)
-                                            ->get()
-                                            ->sum(function (Adjustment $adjustment) use ($subtotalInCents) {
-                                                if ($adjustment->computation->isPercentage()) {
-                                                    return RateCalculator::calculatePercentage($subtotalInCents, $adjustment->getRawOriginal('rate'));
-                                                } else {
-                                                    return $adjustment->getRawOriginal('rate');
-                                                }
-                                            });
-
-                                        // Final total
-                                        $totalInCents = $subtotalInCents + ($taxAmountInCents - $discountAmountInCents);
-
-                                        return CurrencyConverter::formatCentsToMoney($totalInCents, $currencyCode);
-                                    }),
-                            ]),
-                        DocumentTotals::make()
-                            ->type(DocumentType::Estimate),
-                        Forms\Components\Textarea::make('terms')
-                            ->columnSpanFull(),
-                    ]),
+                // Forms\Components\Hidden::make('hidden_item_type')
+                //                     // ->default(ItemType::inventory_product)
+                //     ->afterStateHydrated(function (Forms\Get $get, Forms\Set $set) {
+                //         // Set the initial value of the hidden field on page load
+                //         // dump($get('item_type')->value);
+                //         $set('hidden_item_type', $get('item_type')?->value);
+                //     }),
+                    
+                Forms\Components\Section::make('')
+                ->schema(
+                    self::getRepeaterTables() // Directly call the method to include its return value
+                )
+            ]),
                 Forms\Components\Section::make('Estimate Footer')
                     ->collapsible()
                     ->collapsed()
@@ -526,4 +442,264 @@ class EstimateResource extends Resource
             // Widgets\EstimateOverview::class,
         ];
     }
+
+    protected static function getRepeaterTables(): array{
+        return [
+            TableRepeater::make('lineItems')
+                ->relationship()
+                ->saveRelationshipsUsing(null)
+                ->dehydrated(true)
+                ->headers(function (Forms\Get $get) {
+                    $hasDiscounts = DocumentDiscountMethod::parse($get('discount_method'))->isPerLineItem();
+
+                    $headers = [
+                        Header::make('Items')->width($hasDiscounts ? '15%' : '20%'),
+                        Header::make('Description')->width($hasDiscounts ? '25%' : '30%'),  // Increase when no discounts
+                        Header::make('Quantity')->width('10%'),
+                        Header::make('Price')->width('10%'),
+                        Header::make('Taxes')->width($hasDiscounts ? '15%' : '20%'),       // Increase when no discounts
+                    ];
+
+                    if ($hasDiscounts) {
+                        $headers[] = Header::make('Discounts')->width('15%');
+                    }
+
+                    $headers[] = Header::make('Amount')->width('10%')->align('right');
+
+                    return $headers;
+                })
+                ->schema([
+                    Forms\Components\Select::make('offering_id')
+                    ->label('Item')
+                        ->relationship('sellableOffering', 'name')
+                        ->preload()
+                        ->searchable()
+                        ->required()
+                        ->live()
+                        ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                          
+                            $offeringId = $state;
+                            $offeringRecord = Offering::with(['salesTaxes', 'salesDiscounts'])->find($offeringId);
+
+                            if ($offeringRecord) {
+                                $set('description', $offeringRecord->description);
+                                $set('unit_price', $offeringRecord->price);
+                                $set('salesTaxes', $offeringRecord->salesTaxes->pluck('id')->toArray());
+
+                                $discountMethod = DocumentDiscountMethod::parse($get('../../discount_method'));
+                                if ($discountMethod->isPerLineItem()) {
+                                    $set('salesDiscounts', $offeringRecord->salesDiscounts->pluck('id')->toArray());
+                                }
+                            }
+                        }),
+                    Forms\Components\TextInput::make('description'),
+                    Forms\Components\TextInput::make('quantity')
+                        ->required()
+                        ->numeric()
+                        ->live()
+                        ->default(1),
+                    Forms\Components\TextInput::make('unit_price')
+                        ->label('Price')
+                        ->hiddenLabel()
+                        ->numeric()
+                        ->live()
+                        ->default(0),
+                    Forms\Components\Select::make('salesTaxes')
+                    ->label('Taxes')
+                        ->relationship('salesTaxes', 'name')
+                        ->saveRelationshipsUsing(null)
+                        ->dehydrated(true)
+                        ->preload()
+                        ->multiple()
+                        ->live()
+                        ->searchable(),
+                    Forms\Components\Select::make('salesDiscounts')
+                    ->label('Discounts')
+                        ->relationship('salesDiscounts', 'name')
+                        ->saveRelationshipsUsing(null)
+                        ->dehydrated(true)
+                        ->preload()
+                        ->multiple()
+                        ->live()
+                        ->hidden(function (Forms\Get $get) {
+                            $discountMethod = DocumentDiscountMethod::parse($get('../../discount_method'));
+
+                            return $discountMethod->isPerDocument();
+                        })
+                        ->searchable(),
+                    Forms\Components\Placeholder::make('total')
+                        ->hiddenLabel()
+                        ->extraAttributes(['class' => 'text-left sm:text-right'])
+                        ->content(function (Forms\Get $get) {
+                            $quantity = max((float) ($get('quantity') ?? 0), 0);
+                            $unitPrice = max((float) ($get('unit_price') ?? 0), 0);
+                            $salesTaxes = $get('salesTaxes') ?? [];
+                            $salesDiscounts = $get('salesDiscounts') ?? [];
+                            $currencyCode = $get('../../currency_code') ?? CurrencyAccessor::getDefaultCurrency();
+
+                            $subtotal = $quantity * $unitPrice;
+
+                            $subtotalInCents = CurrencyConverter::convertToCents($subtotal, $currencyCode);
+
+                            $taxAmountInCents = Adjustment::whereIn('id', $salesTaxes)
+                                ->get()
+                                ->sum(function (Adjustment $adjustment) use ($subtotalInCents) {
+                                    if ($adjustment->computation->isPercentage()) {
+                                        return RateCalculator::calculatePercentage($subtotalInCents, $adjustment->getRawOriginal('rate'));
+                                    } else {
+                                        return $adjustment->getRawOriginal('rate');
+                                    }
+                                });
+
+                            $discountAmountInCents = Adjustment::whereIn('id', $salesDiscounts)
+                                ->get()
+                                ->sum(function (Adjustment $adjustment) use ($subtotalInCents) {
+                                    if ($adjustment->computation->isPercentage()) {
+                                        return RateCalculator::calculatePercentage($subtotalInCents, $adjustment->getRawOriginal('rate'));
+                                    } else {
+                                        return $adjustment->getRawOriginal('rate');
+                                    }
+                                });
+
+                            // Final total
+                            $totalInCents = $subtotalInCents + ($taxAmountInCents - $discountAmountInCents);
+
+                            return CurrencyConverter::formatCentsToMoney($totalInCents, $currencyCode);
+                        }),
+                ])->visible(function($get) {
+                    $itemType = $get('item_type');
+                    return $itemType === ItemType::offering->value; 
+                }),
+
+             TableRepeater::make('lineItems')
+                            ->relationship()
+                            ->saveRelationshipsUsing(null)
+                            ->dehydrated(true)
+                            ->headers(function (Forms\Get $get) {
+                                $hasDiscounts = DocumentDiscountMethod::parse($get('discount_method'))->isPerLineItem();
+
+                                $headers = [
+                                    Header::make('Items')->width($hasDiscounts ? '15%' : '20%'),
+                                    Header::make('Description')->width($hasDiscounts ? '25%' : '30%'),  // Increase when no discounts
+                                    Header::make('Quantity')->width('10%'),
+                                    Header::make('Price')->width('10%'),
+                                    Header::make('Taxes')->width($hasDiscounts ? '15%' : '20%'),       // Increase when no discounts
+                                ];
+
+                                if ($hasDiscounts) {
+                                    $headers[] = Header::make('Discounts')->width('15%');
+                                }
+
+                                $headers[] = Header::make('Amount')->width('10%')->align('right');
+
+                                return $headers;
+                            })
+                            ->schema([
+                                Forms\Components\Select::make('product_id')
+                                    ->label('Product')
+                                    ->relationship('purchasableProducts', 'product_name')
+                                    ->preload()
+                                    ->searchable()
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                        logger()->warning($state);
+                                        $offeringId = $state;
+                                        $offeringRecord = Product::with(['salesTaxes', 'salesDiscounts'])->find($offeringId);
+
+                                        if ($offeringRecord) {
+                                            $set('description', $offeringRecord->product_note);
+                                            $set('unit_price', $offeringRecord->product_price);
+                                            $set('salesTaxes', $offeringRecord->salesTaxes->pluck('id')->toArray());
+
+                                            $discountMethod = DocumentDiscountMethod::parse($get('../../discount_method'));
+                                            if ($discountMethod->isPerLineItem()) {
+                                                $set('salesDiscounts', $offeringRecord->salesDiscounts->pluck('id')->toArray());
+                                            }
+                                        }
+                                    }),
+                                Forms\Components\TextInput::make('description'),
+                                Forms\Components\TextInput::make('quantity')
+                                    ->required()
+                                    ->numeric()
+                                    ->live()
+                                    ->default(1),
+                                Forms\Components\TextInput::make('unit_price')
+                                    ->label('Price')
+                                    ->hiddenLabel()
+                                    ->numeric()
+                                    ->live()
+                                    ->default(0),
+                                Forms\Components\Select::make('salesTaxes')
+                                    ->label('Taxes')
+                                    ->relationship('salesTaxes', 'name')
+                                    ->saveRelationshipsUsing(null)
+                                    ->dehydrated(true)
+                                    ->preload()
+                                    ->multiple()
+                                    ->live()
+                                    ->searchable(),
+                                Forms\Components\Select::make('salesDiscounts')
+                                    ->label('Discounts')
+                                    ->relationship('salesDiscounts', 'name')
+                                    ->saveRelationshipsUsing(null)
+                                    ->dehydrated(true)
+                                    ->preload()
+                                    ->multiple()
+                                    ->live()
+                                    ->hidden(function (Forms\Get $get) {
+                                        $discountMethod = DocumentDiscountMethod::parse($get('../../discount_method'));
+
+                                        return $discountMethod->isPerDocument();
+                                    })
+                                    ->searchable(),
+                                Forms\Components\Placeholder::make('total')
+                                    ->hiddenLabel()
+                                    ->extraAttributes(['class' => 'text-left sm:text-right'])
+                                    ->content(function (Forms\Get $get) {
+                                        $quantity = max((float) ($get('quantity') ?? 0), 0);
+                                        $unitPrice = max((float) ($get('unit_price') ?? 0), 0);
+                                        $salesTaxes = $get('salesTaxes') ?? [];
+                                        $salesDiscounts = $get('salesDiscounts') ?? [];
+                                        $currencyCode = $get('../../currency_code') ?? CurrencyAccessor::getDefaultCurrency();
+
+                                        $subtotal = $quantity * $unitPrice;
+
+                                        $subtotalInCents = CurrencyConverter::convertToCents($subtotal, $currencyCode);
+
+                                        $taxAmountInCents = Adjustment::whereIn('id', $salesTaxes)
+                                            ->get()
+                                            ->sum(function (Adjustment $adjustment) use ($subtotalInCents) {
+                                                if ($adjustment->computation->isPercentage()) {
+                                                    return RateCalculator::calculatePercentage($subtotalInCents, $adjustment->getRawOriginal('rate'));
+                                                } else {
+                                                    return $adjustment->getRawOriginal('rate');
+                                                }
+                                            });
+
+                                        $discountAmountInCents = Adjustment::whereIn('id', $salesDiscounts)
+                                            ->get()
+                                            ->sum(function (Adjustment $adjustment) use ($subtotalInCents) {
+                                                if ($adjustment->computation->isPercentage()) {
+                                                    return RateCalculator::calculatePercentage($subtotalInCents, $adjustment->getRawOriginal('rate'));
+                                                } else {
+                                                    return $adjustment->getRawOriginal('rate');
+                                                }
+                                            });
+
+                                        // Final total
+                                        $totalInCents = $subtotalInCents + ($taxAmountInCents - $discountAmountInCents);
+
+                                        return CurrencyConverter::formatCentsToMoney($totalInCents, $currencyCode);
+                                    }),
+                            ])->visible(function ($get) {
+                                $itemType = $get('item_type');
+                                return $itemType === ItemType::inventory_product->value;
+            }),
+                DocumentTotals::make()
+                    ->type(DocumentType::Estimate),
+        ];
+    }
+
+  
 }

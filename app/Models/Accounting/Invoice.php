@@ -62,6 +62,7 @@ class Invoice extends Model
         'discount_method',
         'discount_computation',
         'discount_rate',
+        'item_type',
         'subtotal',
         'tax_total',
         'discount_total',
