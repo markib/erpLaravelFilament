@@ -10,7 +10,6 @@ use App\Models\Accounting\DocumentLineItem;
 use App\Models\Accounting\Invoice;
 use App\Models\Common\Offering;
 use App\Models\Parties\Customer;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 it('allows the user to create a new sales invoice', function () {
@@ -94,8 +93,6 @@ it('allows the user to create a new purchases bill', function () {
 });
 
 it('allows the user to edit a sales invoice with valid data', function () {
-    // Fake storage
-    Storage::fake('public');
 
     // Step 1: Set up a test customer and related offerings
     $customer = Customer::factory()->create();
@@ -124,6 +121,7 @@ it('allows the user to edit a sales invoice with valid data', function () {
         'due_date' => now()->addDays(30)->toDateString(),
         'discount_method' => DocumentDiscountMethod::PerLineItem->value, // Ensure valid value
         'discount_computation' => AdjustmentComputation::Percentage->value, // Ensure valid value
+        'item_type' => 'offering',
         'lineItems' => [
             ['offering_id' => $offering1->id, 'description' => 'Updated Item 1', 'quantity' => 2, 'unit_price' => 50, 'subtotal' => 100],
             ['offering_id' => $offering2->id, 'description' => 'Updated Item 2', 'quantity' => 3, 'unit_price' => 30, 'subtotal' => 90],
@@ -139,6 +137,7 @@ it('allows the user to edit a sales invoice with valid data', function () {
         ->set('data.due_date', $updatedData['due_date'])
         ->set('data.discount_method', $updatedData['discount_method'])
         ->set('data.discount_computation', $updatedData['discount_computation'])
+        ->set('data.item_type', $updatedData['item_type'])
         ->set('data.lineItems', $updatedData['lineItems'])
         ->call('save')
         ->assertHasNoErrors();
@@ -157,6 +156,7 @@ it('allows the user to edit a sales invoice with valid data', function () {
     expect((float) str_replace(',', '', $invoice->total))->toBe((float) $grandTotal);
     expect($invoice->discount_method->value)->toBe(DocumentDiscountMethod::PerLineItem->value);
     expect(in_array($invoice->discount_computation, AdjustmentComputation::cases()))->toBeTrue();
+    expect($invoice->item_type)->toBe('offering');
 
 });
 
@@ -167,19 +167,21 @@ it('sales invoice update requires client and offering', function () {
 
     Livewire::test(CreateInvoice::class)
         ->set('data.client_id', null)
+        //->set('data.item_type', 'offering')
         ->set('data.lineItems', [
-            ['offering_id' => null, 'description' => 'Test Item', 'quantity' => 1, 'unit_price' => 100, 'subtotal' => 100],
+            ['product_id' => null, 'description' => 'Test Item', 'quantity' => 1, 'unit_price' => 100, 'subtotal' => 100],
         ])
         ->call('create')
-        ->assertHasErrors(['data.client_id', 'data.lineItems.0.offering_id']);
+        ->assertHasErrors(['data.client_id', 'data.lineItems.0.product_id']);
 
     $this->assertDatabaseMissing('invoices', [
         'id' => $invoice->id,
         'client_id' => $client->id, // Ensure values were NOT updated
+        // 'item_type' => $invoice->item_type,
     ]);
     $this->assertDatabaseMissing('document_line_items', [
         'documentable_id' => $invoice->id,
-        'offering_id' => $offering->id,
+        'product_id' => $offering->id,
     ]);
 });
 
@@ -204,6 +206,7 @@ it('updates line items when editing the sales invoice', function () {
 
     $response = Livewire::test(EditInvoice::class, ['record' => $invoice->id])
         ->set('data.client_id', $customer->id)
+        ->set('data.item_type', 'Offering')
         ->set('data.discount_method', DocumentDiscountMethod::PerLineItem->value) // Ensure valid value
         ->set('data.discount_computation', AdjustmentComputation::Percentage->value) // Ensure valid value
         ->set('data.lineItems', $updatedLineItems)
@@ -220,5 +223,6 @@ it('updates line items when editing the sales invoice', function () {
     expect($invoice->lineItems[1]->quantity)->toBe(4);
     expect($invoice->discount_method->value)->toBe(DocumentDiscountMethod::PerLineItem->value);
     expect(in_array($invoice->discount_computation, AdjustmentComputation::cases()))->toBeTrue();
+    // expect($invoice->item_type)->toBe('offering');
 
 });

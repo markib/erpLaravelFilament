@@ -23,7 +23,8 @@ trait ManagesLineItems
                 : $record->lineItems()->make();
 
             $lineItem->fill([
-                'offering_id' => $itemData['offering_id'],
+                'offering_id' => $itemData['offering_id'] ?? null,
+                'product_id' => $itemData['product_id'] ?? null,
                 'description' => $itemData['description'],
                 'quantity' => $itemData['quantity'],
                 'unit_price' => $itemData['unit_price'],
@@ -62,8 +63,6 @@ trait ManagesLineItems
 
         $taxType = $isBill ? 'purchaseTaxes' : 'salesTaxes';
         $discountType = $isBill ? 'purchaseDiscounts' : 'salesDiscounts';
-
-        // logger()->info('Item Data:', ['data' => $itemData]);
 
         // if (! isset($itemData[$taxType])) {
         //     logger()->warning('Tax type key missing in item data', ['key' => $taxType]);

@@ -62,6 +62,8 @@ class Invoice extends Model
         'discount_method',
         'discount_computation',
         'discount_rate',
+        'item_type',
+        'estimate_id',
         'subtotal',
         'tax_total',
         'discount_total',
@@ -308,14 +310,15 @@ class Invoice extends Model
         $remainingDiscountCents = $invoiceDiscountTotalCents;
 
         foreach ($this->lineItems as $index => $lineItem) {
-            $lineItemDescription = "{$baseDescription} › {$lineItem->offering->name}";
+            $lineItemName = $lineItem?->offering ? $lineItem->offering->name : $lineItem->product->product_name;
+            $lineItemDescription = "{$baseDescription} › {$lineItemName}";
 
             $lineItemSubtotal = $this->formatAmountToDefaultCurrency($lineItem->getRawOriginal('subtotal'));
-
+            $line_account = $lineItem?->offering ? $lineItem->offering->income_account_id : $lineItem->product->income_account_id;
             $transaction->journalEntries()->create([
                 'company_id' => $this->company_id,
                 'type' => JournalEntryType::Credit,
-                'account_id' => $lineItem->offering->income_account_id,
+                'account_id' => $line_account,
                 'amount' => $lineItemSubtotal,
                 'description' => $lineItemDescription,
             ]);

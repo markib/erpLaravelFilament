@@ -33,6 +33,7 @@ class DocumentLineItem extends Model
     protected $fillable = [
         'company_id',
         'offering_id',
+        'product_id',
         'description',
         'quantity',
         'unit_price',
@@ -60,10 +61,10 @@ class DocumentLineItem extends Model
         return $this->belongsTo(Offering::class);
     }
 
-    // public function product(): BelongsTo
-    // {
-    //     return $this->belongsTo(Product::class);
-    // }
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
 
     public function sellableOffering(): BelongsTo
     {
@@ -78,6 +79,11 @@ class DocumentLineItem extends Model
     public function purchasableOffering(): BelongsTo
     {
         return $this->offering()->where('purchasable', true);
+    }
+
+    public function purchasableProducts(): BelongsTo
+    {
+        return $this->product()->where('purchasable', true);
     }
 
     public function adjustments(): MorphToMany

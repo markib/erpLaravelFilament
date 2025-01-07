@@ -12,6 +12,9 @@ use App\Models\Product\Product;
 use App\Utilities\Currency\CurrencyAccessor;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -47,26 +50,67 @@ class OfferingResource extends Resource
                         // Group these fields together for better layout
                         Forms\Components\Fieldset::make('Details')
                             ->schema([
-                                Forms\Components\Select::make('name')
-                                    ->label('Name')
-                                    ->options(Product::where('enabled', true)->orderby('product_name')->pluck('product_name', 'product_name')->toArray()) // Fetch product list
-                                    ->searchable()
+                                // Forms\Components\Select::make('name')
+                                //     ->label('Name')
+                                //     ->options(Product::where('enabled', true)->orderby('product_name')->pluck('product_name', 'product_name')->toArray()) // Fetch product list
+                                //     ->searchable()
+                                //     ->required()
+                                //     ->reactive() // Makes the field reactive
+                                //     ->afterStateUpdated(function (Forms\Set $set, $state) {
+                                //         // Fetch product price and set it to the price field
+                                //         $product = Product::where('product_name', $state)->first();
+                                //         if ($product) {
+                                //             $set('price', $product->product_price);
+                                //             $set('description', $product->product_note);
+                                //             $set('quantity', $product->product_quantity);
+                                //         }
+                                //     }),
+                                Forms\Components\TextInput::make('name')
+                                    ->autofocus()
                                     ->required()
-                                    ->reactive() // Makes the field reactive
-                                    ->afterStateUpdated(function (Forms\Set $set, $state) {
-                                        // Fetch product price and set it to the price field
-                                        $product = Product::where('product_name', $state)->first();
-                                        if ($product) {
-                                            $set('price', $product->product_price);
-                                            $set('description', $product->product_note);
-                                        }
-                                    }),
+                                    ->columnStart(1)
+                                    ->maxLength(255),
                                 Forms\Components\TextInput::make('price')
                                     ->label('Price')
                                     ->required()
                                     ->numeric()
                                     ->default(0)
                                     ->rules(['numeric', 'min:0.01']),
+                                //         Forms\Components\TextInput::make('quantity')
+                                //             ->label('Quantity')
+                                //             ->numeric()
+                                //             ->live()
+                                //             ->required()
+                                //             ->default(0)
+                                //             ->afterStateUpdated(function (Set $set, Get $get, ?string $state) {
+                                //                 $product = Product::where('product_name', $get('name'))->first();
+                                //                 if ($state > $product->product_quantity) {
+                                //                     $set('quantity', $state); // Reset to the available quantity
+                                //                     Notification::make()
+                                //                         ->title('Quantity exceeds available stock')
+                                //                         ->danger()
+                                //                         ->send();
+                                //                 }
+                                //             })->rules(function (Get $get) {
+                                //     $productName = $get('name');
+                                //     if (!$productName) {
+                                //         return [];
+                                //     }
+
+                                //     $product = Product::where('product_name', $productName)->first();
+
+                                //     if (!$product) {
+                                //         return [];
+                                //     }
+
+                                //     return [
+                                //         'max:'.$product->product_quantity,
+                                //     ];
+                                // })
+                                //             ->validationMessages([
+                                //                 'max' => 'The quantity cannot exceed the available stock.'
+                                //             ]),
+
                                 Forms\Components\Textarea::make('description')
                                     ->label('Description')
                                     ->columnSpan(2)

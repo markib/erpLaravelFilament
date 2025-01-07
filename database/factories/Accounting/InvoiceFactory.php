@@ -51,6 +51,7 @@ class InvoiceFactory extends Factory
             'discount_rate' => $this->faker->numberBetween(0, 100),
             'terms' => $this->faker->sentence,
             'footer' => $this->faker->sentence,
+            'item_type' => 'Offering',
             'created_by' => 1,
             'updated_by' => 1,
         ];

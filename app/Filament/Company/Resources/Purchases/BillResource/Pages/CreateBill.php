@@ -23,6 +23,7 @@ class CreateBill extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
+
         /** @var Invoice $record */
         $record = parent::handleRecordCreation($data);
 

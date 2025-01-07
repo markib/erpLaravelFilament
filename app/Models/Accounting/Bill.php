@@ -54,6 +54,7 @@ class Bill extends Model
         'discount_rate',
         'subtotal',
         'tax_total',
+        'item_type',
         'discount_total',
         'total',
         'amount_paid',

@@ -8,7 +8,7 @@ use App\Filament\Company\Pages\Reports\BalanceSheet;
 use App\Filament\Company\Pages\Reports\CashFlowStatement;
 use App\Filament\Company\Pages\Reports\IncomeStatement;
 use App\Filament\Company\Pages\Reports\TrialBalance;
-use App\Infolists\Components\ReportEntry;
+use App\Filament\Infolists\Components\ReportEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Infolist;
 use Filament\Pages\Page;
