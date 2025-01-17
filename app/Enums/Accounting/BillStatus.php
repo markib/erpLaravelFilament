@@ -12,6 +12,7 @@ enum BillStatus: string implements HasColor, HasLabel
     case Paid = 'paid';
     case Unpaid = 'unpaid';
     case Void = 'void';
+    case Draft = 'draft';
 
     public function getLabel(): ?string
     {
@@ -21,6 +22,7 @@ enum BillStatus: string implements HasColor, HasLabel
     public function getColor(): string | array | null
     {
         return match ($this) {
+            self::Draft => 'gray',
             self::Overdue => 'danger',
             self::Partial, self::Unpaid => 'warning',
             self::Paid => 'success',

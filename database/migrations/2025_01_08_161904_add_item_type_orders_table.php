@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('offerings', function (Blueprint $table) {
-            //
+        Schema::table('orders', function (Blueprint $table) {
+            $table->string('item_type')->nullable();
         });
     }
 
@@ -21,9 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('offerings', function (Blueprint $table) {
-            // $table->dropForeign(['offering_id']);
-            // $table->dropColumn('offering_id');
+        Schema::table('orders', function (Blueprint $table) {
+            $table->dropColumn('item_type');
         });
     }
 };

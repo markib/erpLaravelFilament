@@ -30,6 +30,8 @@ class DocumentLineItem extends Model
 
     protected $table = 'document_line_items';
 
+    protected $primaryKey = 'id';
+
     protected $fillable = [
         'company_id',
         'offering_id',
@@ -123,12 +125,34 @@ class DocumentLineItem extends Model
 
     public function calculateTaxTotal(): Money
     {
-        $subtotal = money($this->subtotal, CurrencyAccessor::getDefaultCurrency());
 
-        return $this->taxes->reduce(
-            fn (Money $carry, Adjustment $tax) => $carry->add($subtotal->multiply($tax->rate / 100)),
-            money(0, CurrencyAccessor::getDefaultCurrency())
-        );
+        // $subtotal = money($this->subtotal, CurrencyAccessor::getDefaultCurrency());
+
+        // return $this->taxes->reduce(
+        //     fn (Money $carry, Adjustment $tax) => $carry->add($subtotal->multiply($tax->rate / 100)),
+        //     money(0, CurrencyAccessor::getDefaultCurrency())
+        // );
+        try {
+            $subtotalInCents = money($this->subtotal, CurrencyAccessor::getDefaultCurrency())->getAmount();
+
+            return $this->taxes->reduce(
+                function (Money $carry, Adjustment $tax) use ($subtotalInCents) {
+
+                    $taxAmount = 0;
+
+                    if ($tax->computation->isPercentage()) { // Check if the computation is percentage
+                        $taxAmount = RateCalculator::calculatePercentage($subtotalInCents, $tax->getRawOriginal('rate'));
+                    } else {
+                        $taxAmount = $tax->rate; // Fixed amount in cents
+                    }
+
+                    return $carry->add(money($taxAmount, CurrencyAccessor::getDefaultCurrency()));
+                },
+                money(0, CurrencyAccessor::getDefaultCurrency())
+            );
+        } catch (\Exception $e) {
+            logger()->error('Error calculating tax total: ' . $e->getMessage());
+        }
     }
 
     public function calculateDiscountTotal(): Money

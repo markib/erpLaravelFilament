@@ -55,10 +55,12 @@ class Bill extends Model
         'subtotal',
         'tax_total',
         'item_type',
+        'order_id',
         'discount_total',
         'total',
         'amount_paid',
         'notes',
+        'goods_received_at',
         'created_by',
         'updated_by',
     ];

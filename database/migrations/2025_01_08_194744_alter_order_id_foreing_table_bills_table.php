@@ -11,8 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('offerings', function (Blueprint $table) {
-            //
+        Schema::table('bills', function (Blueprint $table) {
+            $table->dropForeign(['order_id']);
+            $table->dropColumn('order_id');
+            $table->foreignId('order_id')->nullable()->constrained('orders')->nullOnDelete();
         });
     }
 
@@ -21,9 +23,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('offerings', function (Blueprint $table) {
-            // $table->dropForeign(['offering_id']);
-            // $table->dropColumn('offering_id');
+        Schema::table('bills', function (Blueprint $table) {
+            $table->dropForeign(['order_id']);
         });
     }
 };

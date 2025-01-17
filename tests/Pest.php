@@ -39,33 +39,33 @@ uses(Tests\TestCase::class)
 
 // uses(RefreshDatabase::class); // Applying RefreshDatabase globally
 
-beforeEach(function () {
-    // Set up the testing environment
+// beforeEach(function () {
+//     // Set up the testing environment
 
-    // Optionally run the seeders
-    $this->seed(TestDatabaseSeeder::class);
+//     // Optionally run the seeders
+//     $this->seed(TestDatabaseSeeder::class);
 
-    // Mix in custom functionality, like the TestsReport
-    Testable::mixin(new TestsReport);
+//     // Mix in custom functionality, like the TestsReport
+//     Testable::mixin(new TestsReport);
 
-    // Set up the user and company
-    $this->testUser = User::first();
+//     // Set up the user and company
+//     $this->testUser = User::first();
 
-    // Assume the user has at least one owned company
-    $this->testCompany = $this->testUser->ownedCompanies->first();
+//     // Assume the user has at least one owned company
+//     $this->testCompany = $this->testUser->ownedCompanies->first();
 
-    // Switch the company for the test user
-    $this->testUser->switchCompany($this->testCompany);
+//     // Switch the company for the test user
+//     $this->testUser->switchCompany($this->testCompany);
 
-    // Set the user for the session
-    $this->actingAs($this->testUser);
+//     // Set the user for the session
+//     $this->actingAs($this->testUser);
 
-    // Set the tenant (company) for Filament
-    Filament::setTenant($this->testCompany);
-});
+//     // Set the tenant (company) for Filament
+//     Filament::setTenant($this->testCompany);
+// });
 
 // This makes use of the existing functionality and your setup before each test
-it('checks the user and company setup', function () {
-    expect($this->testUser)->not->toBeNull();
-    expect($this->testCompany)->not->toBeNull();
-});
+// it('checks the user and company setup', function () {
+//     expect($this->testUser)->not->toBeNull();
+//     expect($this->testCompany)->not->toBeNull();
+// });

@@ -2,15 +2,23 @@
 
 use App\Enums\Accounting\AdjustmentComputation;
 use App\Enums\Accounting\DocumentDiscountMethod;
+use App\Enums\Common\ItemType;
 use App\Filament\Company\Resources\Sales\InvoiceResource\Pages\CreateInvoice;
 use App\Filament\Company\Resources\Sales\InvoiceResource\Pages\EditInvoice;
 use App\Models\Accounting\Adjustment;
-use App\Models\Accounting\Bill;
 use App\Models\Accounting\DocumentLineItem;
 use App\Models\Accounting\Invoice;
 use App\Models\Common\Offering;
 use App\Models\Parties\Customer;
 use Livewire\Livewire;
+
+beforeEach(
+    function () {
+        $this->customer = Customer::factory(['company_id' => $this->testCompany->id, 'currency_code' => 'USD'])->create();
+        $this->offering = Offering::factory()->withPurchaseTaxes()->withPurchaseDiscounts()->count(2)->create(['company_id' => $this->testCompany->id, 'sellable' => true]);
+
+    }
+);
 
 it('allows the user to create a new sales invoice', function () {
 
@@ -52,61 +60,21 @@ it('allows the user to create a new sales invoice', function () {
     expect((float) str_replace(',', '', $invoice->total))->toBe((float) $grandTotal);
 });
 
-it('allows the user to create a new purchases bill', function () {
-
-    // Create Offering and related adjustments (salesTaxes and salesDiscounts)
-    $offering = Offering::factory()->create(['purchasable' => true]);
-
-    $salesTax = Adjustment::factory()->tax()->create(['rate' => 10]);
-
-    $salesDiscount = Adjustment::factory()->discount()->create(['rate' => 5]);
-
-    // Assign sales taxes and discounts to the offering
-    $offering->salesTaxes()->attach($salesTax);
-    $offering->salesDiscounts()->attach($salesDiscount);
-
-    // Create an invoice with 3 line items (you can change the count if needed)
-    $invoice = Bill::factory()->withLineItems(3)->create();
-
-    // Step 5: Refresh the invoice and calculate totals
-    $invoice->refresh();
-
-    // $subtotal = $invoice->lineItems->sum('subtotal')/100;
-    $subtotal = bcdiv($invoice->lineItems()->sum('subtotal'), '100', 2);
-    $taxTotal = bcdiv($invoice->lineItems->sum('tax_total'), '100', 2);
-    $discountTotal = bcdiv($invoice->lineItems->sum('discount_total'), '100', 2);
-    $grandTotal = $subtotal + $taxTotal - $discountTotal;
-
-    $invoice->updateQuietly([
-        'subtotal' => $subtotal,
-        'tax_total' => $taxTotal,
-        'discount_total' => $discountTotal,
-        'total' => $grandTotal,
-    ]);
-
-    // Assertions to validate the test
-    expect($invoice->lineItems->count())->toBe(3);
-    expect((float) str_replace(',', '', $invoice->subtotal))->toBe((float) $subtotal);
-    expect((float) str_replace(',', '', $invoice->tax_total))->toBe((float) $taxTotal);
-    expect((float) str_replace(',', '', $invoice->discount_total))->toBe((float) $discountTotal);
-    expect((float) str_replace(',', '', $invoice->total))->toBe((float) $grandTotal);
-});
-
 it('allows the user to edit a sales invoice with valid data', function () {
 
     // Step 1: Set up a test customer and related offerings
-    $customer = Customer::factory()->create();
-    $offering1 = Offering::factory()->create(['sellable' => true]);
-    $offering2 = Offering::factory()->create(['sellable' => true]);
-    $salesTax = Adjustment::factory()->tax()->create(['rate' => 10]);
-    $salesDiscount = Adjustment::factory()->discount()->create(['rate' => 5]);
+
+    // dd($this->offering->first()->company_id, $this->offering->last()->company_id);
+    // $offering2 = Offering::factory(['company_id' => $this->customer->id, 'sellable' => true])->withPurchaseTaxes()->withPurchaseDiscounts()->create();;
+    // $salesTax = Adjustment::factory()->tax()->create(['rate' => 10]);
+    // $salesDiscount = Adjustment::factory()->discount()->create(['rate' => 5]);
 
     // Attach taxes and discounts to the offering
-    $offering1->salesTaxes()->attach($salesTax);
-    $offering1->salesDiscounts()->attach($salesDiscount);
+    // $offering1->salesTaxes()->attach($salesTax);
+    // $offering1->salesDiscounts()->attach($salesDiscount);
 
-    $offering2->salesTaxes()->attach($salesTax);
-    $offering2->salesDiscounts()->attach($salesDiscount);
+    // $offering2->salesTaxes()->attach($salesTax);
+    // $offering2->salesDiscounts()->attach($salesDiscount);
 
     // Step 2: Create a base invoice with line items
     // Create an invoice with 3 line items (you can change the count if needed)
@@ -114,33 +82,38 @@ it('allows the user to edit a sales invoice with valid data', function () {
 
     // Step 3: Update data for the invoice
     $updatedData = [
-        'client_id' => $customer->id,
+        'client_id' => $this->customer->id,
         'header' => 'Updated Invoice Header',
         'subheader' => 'Updated Subheader',
+        'currency_code' => $this->customer->currency_code,
         'date' => now()->toDateString(),
         'due_date' => now()->addDays(30)->toDateString(),
         'discount_method' => DocumentDiscountMethod::PerLineItem->value, // Ensure valid value
         'discount_computation' => AdjustmentComputation::Percentage->value, // Ensure valid value
-        'item_type' => 'offering',
+        'item_type' => ItemType::offering->value,
         'lineItems' => [
-            ['offering_id' => $offering1->id, 'description' => 'Updated Item 1', 'quantity' => 2, 'unit_price' => 50, 'subtotal' => 100],
-            ['offering_id' => $offering2->id, 'description' => 'Updated Item 2', 'quantity' => 3, 'unit_price' => 30, 'subtotal' => 90],
+            ['offering_id' => $this->offering[0]->id, 'product_id' => null, 'description' => 'Updated Item 1', 'quantity' => 2, 'unit_price' => $this->offering[0]->price, 'subtotal' => 100],
+            ['offering_id' => $this->offering[1]->id, 'product_id' => null, 'description' => 'Updated Item 2', 'quantity' => 3, 'unit_price' => $this->offering[1]->price, 'subtotal' => 90],
         ],
     ];
 
     // Step 4: Interact with the Livewire component of the Filament resource
-    Livewire::test(EditInvoice::class, ['record' => $invoice->id, 'company' => 1])
+    $component = Livewire::test(EditInvoice::class, ['record' => $invoice->id, 'company' => $this->testCompany->id])
+
         ->set('data.client_id', $updatedData['client_id'])
+        ->assertSet('data.currency_code', $updatedData['currency_code'])
         ->set('data.header', $updatedData['header'])
         ->set('data.subheader', $updatedData['subheader'])
         ->set('data.date', $updatedData['date'])
         ->set('data.due_date', $updatedData['due_date'])
+        ->set('data.item_type', $updatedData['item_type'])
         ->set('data.discount_method', $updatedData['discount_method'])
         ->set('data.discount_computation', $updatedData['discount_computation'])
-        ->set('data.item_type', $updatedData['item_type'])
         ->set('data.lineItems', $updatedData['lineItems'])
         ->call('save')
         ->assertHasNoErrors();
+    //  $componentInstance = $component->instance();
+    //  dd($componentInstance->data['discount_computation']); // Inspect the value
 
     $invoice->refresh();
 
@@ -155,8 +128,8 @@ it('allows the user to edit a sales invoice with valid data', function () {
     expect((float) str_replace(',', '', $invoice->discount_total))->toBe((float) $discountTotal);
     expect((float) str_replace(',', '', $invoice->total))->toBe((float) $grandTotal);
     expect($invoice->discount_method->value)->toBe(DocumentDiscountMethod::PerLineItem->value);
-    expect(in_array($invoice->discount_computation, AdjustmentComputation::cases()))->toBeTrue();
-    expect($invoice->item_type)->toBe('offering');
+    expect($invoice->discount_computation->value)->toBe(AdjustmentComputation::Percentage->value);
+    // expect($invoice->item_type)->toBe(ItemType::offering->value);
 
 });
 

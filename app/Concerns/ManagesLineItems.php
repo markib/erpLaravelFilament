@@ -6,6 +6,7 @@ use App\Enums\Accounting\AdjustmentComputation;
 use App\Enums\Accounting\DocumentDiscountMethod;
 use App\Models\Accounting\Bill;
 use App\Models\Accounting\DocumentLineItem;
+use App\Models\Accounting\Order;
 use App\Utilities\Currency\CurrencyAccessor;
 use App\Utilities\Currency\CurrencyConverter;
 use App\Utilities\RateCalculator;
@@ -59,9 +60,11 @@ trait ManagesLineItems
 
     protected function handleLineItemAdjustments(DocumentLineItem $lineItem, array $itemData, DocumentDiscountMethod $discountMethod): void
     {
-        $isBill = $lineItem->documentable instanceof Bill;
+
+        $isBill = $lineItem->documentable instanceof Bill || $lineItem->documentable instanceof Order;
 
         $taxType = $isBill ? 'purchaseTaxes' : 'salesTaxes';
+
         $discountType = $isBill ? 'purchaseDiscounts' : 'salesDiscounts';
 
         // if (! isset($itemData[$taxType])) {

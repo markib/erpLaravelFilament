@@ -82,15 +82,16 @@ class CompanyFactory extends Factory
         return $this->has(Supplier::factory()->count($count)->withContact()->withAddress());
     }
 
-    public function withOfferings(int $count = 10): self
+    public function withOfferings(int $count = 2): self
     {
         return $this->afterCreating(function (Company $company) use ($count) {
+            logger()->debug('Company ID: ' . $company->id);
             Offering::factory()
                 ->count($count)
                 ->sellable()
-                ->withSalesAdjustments()
+                ->withAdjustments()
                 ->purchasable()
-                ->withPurchaseAdjustments()
+                // ->withPurchaseAdjustments()
                 ->create([
                     'company_id' => $company->id,
                     'created_by' => $company->user_id,

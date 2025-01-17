@@ -2,19 +2,18 @@
 
 namespace App\Filament\Company\Resources\Purchases;
 
-use App\Enums\Accounting\BillStatus;
 use App\Enums\Accounting\DocumentDiscountMethod;
 use App\Enums\Accounting\DocumentType;
-use App\Enums\Accounting\PaymentMethod;
+use App\Enums\Accounting\OrderStatus;
 use App\Enums\Common\ItemType;
-use App\Filament\Company\Resources\Purchases\BillResource\Pages;
+use App\Filament\Company\Resources\Purchases\OrderResource\Pages;
+use App\Filament\Company\Resources\Purchases\OrderResource\Widgets;
 use App\Filament\Forms\Components\CreateCurrencySelect;
 use App\Filament\Forms\Components\DocumentTotals;
 use App\Filament\Tables\Actions\ReplicateBulkAction;
 use App\Filament\Tables\Filters\DateRangeFilter;
 use App\Models\Accounting\Adjustment;
-use App\Models\Accounting\Bill;
-use App\Models\Banking\BankAccount;
+use App\Models\Accounting\Order;
 use App\Models\Common\Offering;
 use App\Models\Parties\Supplier;
 use App\Models\Product\Product;
@@ -23,22 +22,21 @@ use App\Utilities\Currency\CurrencyConverter;
 use App\Utilities\RateCalculator;
 use Awcodes\TableRepeater\Components\TableRepeater;
 use Awcodes\TableRepeater\Header;
-use Closure;
 use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
-class BillResource extends Resource
+class OrderResource extends Resource
 {
-    protected static ?string $model = Bill::class;
+    protected static ?string $model = Order::class;
 
     // protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -48,29 +46,73 @@ class BillResource extends Resource
 
         return $form
             ->schema([
-                Forms\Components\Section::make('Bill Details')
+                Forms\Components\Section::make('Order Header')
+                    ->collapsible()
+                    ->collapsed()
                     ->schema([
                         Forms\Components\Split::make([
                             Forms\Components\Group::make([
-                                Forms\Components\Select::make('vendor_id')
-                                    ->relationship('vendor', 'supplier_name')
-                                    ->preload()
-                                    ->searchable()
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
-                                        if (! $state) {
-                                            return;
-                                        }
+                                FileUpload::make('logo')
+                                    ->openable()
+                                    ->maxSize(1024)
+                                    ->localizeLabel()
+                                    ->visibility('public')
+                                    ->disk('public')
+                                    ->directory('logos/document')
+                                    ->imageResizeMode('contain')
+                                    ->imageCropAspectRatio('3:2')
+                                    ->panelAspectRatio('3:2')
+                                    ->maxWidth(MaxWidth::ExtraSmall)
+                                    ->panelLayout('integrated')
+                                    ->removeUploadedFileButtonPosition('center bottom')
+                                    ->uploadButtonPosition('center bottom')
+                                    ->uploadProgressIndicatorPosition('center bottom')
+                                    ->getUploadedFileNameForStorageUsing(
+                                        static fn (TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
+                                            ->prepend(Auth::user()->currentCompany->id . '_'),
+                                    )
+                                    ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/gif']),
+                            ]),
+                            Forms\Components\Group::make([
+                                Forms\Components\TextInput::make('header')
+                                    ->default('Order'),
+                                Forms\Components\TextInput::make('subheader'),
+                                Forms\Components\View::make('filament.forms.components.company-info')
+                                    ->viewData([
+                                        'company_name' => $company->name,
+                                        'company_address' => $company->profile->address,
+                                        'company_city' => $company->profile->city?->name,
+                                        'company_state' => $company->profile->state?->name,
+                                        'company_zip' => $company->profile->zip_code,
+                                        'company_country' => $company->profile->state?->country->name,
+                                    ]),
+                            ])->grow(true),
+                        ])->from('md'),
+                    ]),
+                Forms\Components\Section::make('Order Details')
+                    ->schema([
+                        Forms\Components\Split::make([
+                            Forms\Components\Group::make([Forms\Components\Select::make('vendor_id')
+                                ->relationship('vendor', 'supplier_name')
+                                ->preload()
+                                ->searchable()
+                                ->required()
+                                ->live()
+                                ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
 
-                                        $currencyCode = Supplier::find($state)?->currency_code;
+                                    if (! $state) {
+                                        return;
+                                    }
 
-                                        if ($currencyCode) {
-                                            $set('currency_code', $currencyCode);
-                                        }
-                                    }),
+                                    $currencyCode = Supplier::find($state)?->currency_code;
+
+                                    if ($currencyCode) {
+                                        $set('currency_code', $currencyCode);
+                                    }
+                                }),
                                 CreateCurrencySelect::make('currency_code'),
                                 Forms\Components\Placeholder::make('')->extraAttributes(['class' => 'h-32 mt-8']),
+
                                 Forms\Components\Select::make('item_type')
                                     ->label('Item Type')
                                     ->options(ItemType::class)
@@ -93,27 +135,32 @@ class BillResource extends Resource
                                         $set('lineItems.*.purchaseTaxes', []);
                                     }),
                             ]),
-
                             Forms\Components\Group::make([
-                                Forms\Components\TextInput::make('bill_number')
-                                    ->label('Bill Number')
-                                    ->default(fn () => Bill::getNextDocumentNumber())
-                                    ->required(),
                                 Forms\Components\TextInput::make('order_number')
-                                    ->label('P.O/S.O Number'),
+                                    ->label('Order Number')
+                                    ->default(fn () => Order::getNextDocumentNumber()),
+                                Forms\Components\TextInput::make('reference_number')
+                                    ->label('Reference Number'),
                                 Forms\Components\DatePicker::make('date')
-                                    ->label('Bill Date')
+                                    ->label('Order Date')
+                                    ->live()
                                     ->default(now())
-                                    ->disabled(function (?Bill $record) {
-                                        return $record?->hasPayments();
-                                    })
-                                    ->required(),
-                                Forms\Components\DatePicker::make('due_date')
-                                    ->label('Due Date')
+                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                        $date = $state;
+                                        $expirationDate = $get('expiration_date');
+
+                                        if ($date && $expirationDate && $date > $expirationDate) {
+                                            $set('expiration_date', $date);
+                                        }
+                                    }),
+                                Forms\Components\DatePicker::make('expiration_date')
+                                    ->label('Expiration Date')
                                     ->default(function () use ($company) {
-                                        return now()->addDays($company->defaultBill->payment_terms->getDays());
+                                        return now()->addDays($company->defaultInvoice->payment_terms->getDays());
                                     })
-                                    ->required(),
+                                    ->minDate(static function (Forms\Get $get) {
+                                        return $get('date') ?? now();
+                                    }),
                                 Forms\Components\Select::make('discount_method')
                                     ->label('Discount Method')
                                     ->options(DocumentDiscountMethod::class)
@@ -124,18 +171,23 @@ class BillResource extends Resource
 
                                         if ($discountMethod->isPerDocument()) {
                                             $set('lineItems.*.purchaseDiscounts', []);
-                                            $set('lineItems.*.quantity', 1);
                                         }
                                     })
                                     ->live(),
-
                             ])->grow(true),
                         ])->from('md'),
+
                         Forms\Components\Section::make('')
                             ->schema(
                                 self::getRepeaterTables() // Directly call the method to include its return value
                             ),
-
+                    ]),
+                Forms\Components\Section::make('Order Footer')
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        Forms\Components\Textarea::make('footer')
+                            ->columnSpanFull(),
                     ]),
             ]);
     }
@@ -143,7 +195,7 @@ class BillResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('due_date')
+            ->defaultSort('expiration_date')
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
@@ -153,32 +205,24 @@ class BillResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('due_date')
-                    ->label('Due')
+                Tables\Columns\TextColumn::make('expiration_date')
+                    ->label('Expiration Date')
                     ->asRelativeDay()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('date')
                     ->date()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('bill_number')
+                Tables\Columns\TextColumn::make('order_number')
                     ->label('Number')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('vendor.supplier_name')
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('total')
-                    ->currencyWithConversion(static fn (Bill $record) => $record->currency_code)
+                    ->currencyWithConversion(static fn (Order $record) => $record->currency_code)
                     ->sortable()
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('amount_paid')
-                    ->label('Amount Paid')
-                    ->currencyWithConversion(static fn (Bill $record) => $record->currency_code)
-                    ->sortable()
-                    ->toggleable(),
-                Tables\Columns\TextColumn::make('amount_due')
-                    ->label('Amount Due')
-                    ->currencyWithConversion(static fn (Bill $record) => $record->currency_code)
-                    ->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('vendor')
@@ -186,21 +230,15 @@ class BillResource extends Resource
                     ->searchable()
                     ->preload(),
                 Tables\Filters\SelectFilter::make('status')
-                    ->options(BillStatus::class)
+                    ->options(OrderStatus::class)
                     ->native(false),
-                Tables\Filters\TernaryFilter::make('has_payments')
-                    ->label('Has Payments')
-                    ->queries(
-                        true: fn (Builder $query) => $query->whereHas('payments'),
-                        false: fn (Builder $query) => $query->whereDoesntHave('payments'),
-                    ),
                 DateRangeFilter::make('date')
                     ->fromLabel('From Date')
                     ->untilLabel('To Date')
                     ->indicatorLabel('Date'),
-                DateRangeFilter::make('due_date')
-                    ->fromLabel('From Due Date')
-                    ->untilLabel('To Due Date')
+                DateRangeFilter::make('expiration_date')
+                    ->fromLabel('From Expiration Date')
+                    ->untilLabel('To Expiration Date')
                     ->indicatorLabel('Due'),
             ])
             ->actions([
@@ -208,97 +246,12 @@ class BillResource extends Resource
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\DeleteAction::make(),
-                    Bill::getReplicateAction(Tables\Actions\ReplicateAction::class),
-                    Tables\Actions\Action::make('markGoodsReceived')
-                        ->label('Mark Goods Received')
-                        ->icon('heroicon-o-truck')
-                        ->visible(function (Bill $record) {
-                            return is_null($record->goods_received_at);
-                        })
-                        ->action(function (Bill $record) {
-                            $record->update(['goods_received_at' => now()]);
-                            Notification::make()
-                                ->title('Goods Received')
-                                ->success()
-                                ->send();
-                        })
-                        ->requiresConfirmation()
-                        ->modalHeading('Mark Goods as Received')
-                        ->modalDescription('Are you sure you want to mark the goods for this bill as received?')
-                        ->modalSubmitActionLabel('Yes, mark as received'),
-                    Tables\Actions\Action::make('recordPayment')
-                        ->label('Record Payment')
-                        ->stickyModalHeader()
-                        ->stickyModalFooter()
-                        ->modalFooterActionsAlignment(Alignment::End)
-                        ->modalWidth(MaxWidth::TwoExtraLarge)
-                        ->icon('heroicon-o-credit-card')
-                        ->visible(function (Bill $record) {
-                            return $record->canRecordPayment();
-                        })
-                        ->mountUsing(function (Bill $record, Form $form) {
-                            $form->fill([
-                                'posted_at' => now(),
-                                'amount' => $record->amount_due,
-                            ]);
-                        })
-                        ->databaseTransaction()
-                        ->successNotificationTitle('Payment Recorded')
-                        ->form([
-                            Forms\Components\DatePicker::make('posted_at')
-                                ->label('Date'),
-                            Forms\Components\TextInput::make('amount')
-                                ->label('Amount')
-                                ->required()
-                                ->money(fn (Bill $record) => $record->currency_code)
-                                ->live(onBlur: true)
-                                ->helperText(function (Bill $record, $state) {
-                                    $billCurrency = $record->currency_code;
-                                    if (! CurrencyConverter::isValidAmount($state, $billCurrency)) {
-                                        return null;
-                                    }
-
-                                    $amountDue = $record->getRawOriginal('amount_due');
-                                    $amount = CurrencyConverter::convertToCents($state, $billCurrency);
-
-                                    if ($amount <= 0) {
-                                        return 'Please enter a valid positive amount';
-                                    }
-
-                                    $newAmountDue = $amountDue - $amount;
-
-                                    return match (true) {
-                                        $newAmountDue > 0 => 'Amount due after payment will be ' . CurrencyConverter::formatCentsToMoney($newAmountDue, $billCurrency),
-                                        $newAmountDue === 0 => 'Bill will be fully paid',
-                                        default => 'Amount exceeds bill total by ' . CurrencyConverter::formatCentsToMoney(abs($newAmountDue), $billCurrency),
-                                    };
-                                })
-                                ->rules([
-                                    static fn (Bill $record): Closure => static function (string $attribute, $value, Closure $fail) use ($record) {
-                                        if (! CurrencyConverter::isValidAmount($value, $record->currency_code)) {
-                                            $fail('Please enter a valid amount');
-                                        }
-                                    },
-                                ]),
-                            Forms\Components\Select::make('payment_method')
-                                ->label('Payment Method')
-                                ->required()
-                                ->options(PaymentMethod::class),
-                            Forms\Components\Select::make('bank_account_id')
-                                ->label('Account')
-                                ->required()
-                                ->options(BankAccount::query()
-                                    ->get()
-                                    ->pluck('account.name', 'id'))
-                                ->searchable(),
-                            Forms\Components\Textarea::make('notes')
-                                ->label('Notes'),
-                        ])
-                        ->action(function (Bill $record, Tables\Actions\Action $action, array $data) {
-                            $record->recordPayment($data);
-
-                            $action->success();
-                        }),
+                    Order::getReplicateAction(Tables\Actions\ReplicateAction::class),
+                    Order::getApproveDraftAction(Tables\Actions\Action::class),
+                    Order::getMarkAsSentAction(Tables\Actions\Action::class),
+                    Order::getMarkAsAcceptedAction(Tables\Actions\Action::class),
+                    Order::getMarkAsDeclinedAction(Tables\Actions\Action::class),
+                    Order::getConvertToBillAction(Tables\Actions\Action::class),
                 ]),
             ])
             ->bulkActions([
@@ -307,29 +260,32 @@ class BillResource extends Resource
                     ReplicateBulkAction::make()
                         ->label('Replicate')
                         ->modalWidth(MaxWidth::Large)
-                        ->modalDescription('Replicating bills will also replicate their line items. Are you sure you want to proceed?')
-                        ->successNotificationTitle('Bills Replicated Successfully')
-                        ->failureNotificationTitle('Failed to Replicate Bills')
+                        ->modalDescription('Replicating estimates will also replicate their line items. Are you sure you want to proceed?')
+                        ->successNotificationTitle('Estimates Replicated Successfully')
+                        ->failureNotificationTitle('Failed to Replicate Estimates')
                         ->databaseTransaction()
                         ->deselectRecordsAfterCompletion()
                         ->excludeAttributes([
+                            'estimate_number',
+                            'date',
+                            'expiration_date',
+                            'approved_at',
+                            'accepted_at',
+                            'converted_at',
+                            'declined_at',
+                            'last_sent_at',
+                            'last_viewed_at',
                             'status',
-                            'amount_paid',
-                            'amount_due',
                             'created_by',
                             'updated_by',
                             'created_at',
                             'updated_at',
-                            'bill_number',
-                            'date',
-                            'due_date',
-                            'paid_at',
                         ])
-                        ->beforeReplicaSaved(function (Bill $replica) {
-                            $replica->status = BillStatus::Unpaid;
-                            $replica->bill_number = Bill::getNextDocumentNumber();
+                        ->beforeReplicaSaved(function (Order $replica) {
+                            $replica->status = OrderStatus::Draft;
+                            $replica->estimate_number = Order::getNextDocumentNumber();
                             $replica->date = now();
-                            $replica->due_date = now()->addDays($replica->company->defaultBill->payment_terms->getDays());
+                            $replica->expiration_date = now()->addDays($replica->company->defaultInvoice->payment_terms->getDays());
                         })
                         ->withReplicatedRelationships(['lineItems'])
                         ->withExcludedRelationshipAttributes('lineItems', [
@@ -340,24 +296,19 @@ class BillResource extends Resource
                             'created_at',
                             'updated_at',
                         ]),
-                    Tables\Actions\BulkAction::make('recordPayments')
-                        ->label('Record Payments')
-                        ->icon('heroicon-o-credit-card')
-                        ->stickyModalHeader()
-                        ->stickyModalFooter()
-                        ->modalFooterActionsAlignment(Alignment::End)
-                        ->modalWidth(MaxWidth::TwoExtraLarge)
+                    Tables\Actions\BulkAction::make('approveDrafts')
+                        ->label('Approve')
+                        ->icon('heroicon-o-check-circle')
                         ->databaseTransaction()
-                        ->successNotificationTitle('Payments Recorded')
-                        ->failureNotificationTitle('Failed to Record Payments')
-                        ->deselectRecordsAfterCompletion()
-                        ->beforeFormFilled(function (Collection $records, Tables\Actions\BulkAction $action) {
-                            $isInvalid = $records->contains(fn (Bill $bill) => ! $bill->canRecordPayment());
+                        ->successNotificationTitle('Orders Approved')
+                        ->failureNotificationTitle('Failed to Approve Orders')
+                        ->before(function (Collection $records, Tables\Actions\BulkAction $action) {
+                            $isInvalid = $records->contains(fn (Order $record) => ! $record->canBeApproved());
 
                             if ($isInvalid) {
                                 Notification::make()
-                                    ->title('Payment Recording Failed')
-                                    ->body('Bills that are either paid, voided, or are in a foreign currency cannot be processed through bulk payments. Please adjust your selection and try again.')
+                                    ->title('Approval Failed')
+                                    ->body('Only draft orders can be approved. Please adjust your selection and try again.')
                                     ->persistent()
                                     ->danger()
                                     ->send();
@@ -365,75 +316,94 @@ class BillResource extends Resource
                                 $action->cancel(true);
                             }
                         })
-                        ->mountUsing(function (Collection $records, Form $form) {
-                            $totalAmountDue = $records->sum(fn (Bill $bill) => $bill->getRawOriginal('amount_due'));
+                        ->action(function (Collection $records, Tables\Actions\BulkAction $action) {
+                            $records->each(function (Order $record) {
+                                $record->approveDraft();
+                            });
 
-                            $form->fill([
-                                'posted_at' => now(),
-                                'amount' => CurrencyConverter::convertCentsToFormatSimple($totalAmountDue),
-                            ]);
-                        })
-                        ->form([
-                            Forms\Components\DatePicker::make('posted_at')
-                                ->label('Date'),
-                            Forms\Components\TextInput::make('amount')
-                                ->label('Amount')
-                                ->required()
-                                ->money()
-                                ->rules([
-                                    static fn (): Closure => static function (string $attribute, $value, Closure $fail) {
-                                        if (! CurrencyConverter::isValidAmount($value)) {
-                                            $fail('Please enter a valid amount');
-                                        }
-                                    },
-                                ]),
-                            Forms\Components\Select::make('payment_method')
-                                ->label('Payment Method')
-                                ->required()
-                                ->options(PaymentMethod::class),
-                            Forms\Components\Select::make('bank_account_id')
-                                ->label('Account')
-                                ->required()
-                                ->options(BankAccount::query()
-                                    ->get()
-                                    ->pluck('account.name', 'id'))
-                                ->searchable(),
-                            Forms\Components\Textarea::make('notes')
-                                ->label('Notes'),
-                        ])
-                        ->before(function (Collection $records, Tables\Actions\BulkAction $action, array $data) {
-                            $totalPaymentAmount = CurrencyConverter::convertToCents($data['amount']);
-                            $totalAmountDue = $records->sum(fn (Bill $bill) => $bill->getRawOriginal('amount_due'));
+                            $action->success();
+                        }),
+                    Tables\Actions\BulkAction::make('markAsSent')
+                        ->label('Mark as Sent')
+                        ->icon('heroicon-o-paper-airplane')
+                        ->databaseTransaction()
+                        ->successNotificationTitle('Orders Sent')
+                        ->failureNotificationTitle('Failed to Mark Orders as Sent')
+                        ->before(function (Collection $records, Tables\Actions\BulkAction $action) {
+                            $isInvalid = $records->contains(fn (Order $record) => ! $record->canBeMarkedAsSent());
 
-                            if ($totalPaymentAmount > $totalAmountDue) {
-                                $formattedTotalAmountDue = CurrencyConverter::formatCentsToMoney($totalAmountDue);
-
+                            if ($isInvalid) {
                                 Notification::make()
-                                    ->title('Excess Payment Amount')
-                                    ->body("The payment amount exceeds the total amount due of {$formattedTotalAmountDue}. Please adjust the payment amount and try again.")
+                                    ->title('Sending Failed')
+                                    ->body('Only unsent orders can be marked as sent. Please adjust your selection and try again.')
                                     ->persistent()
-                                    ->warning()
+                                    ->danger()
                                     ->send();
 
-                                $action->halt(true);
+                                $action->cancel(true);
                             }
                         })
-                        ->action(function (Collection $records, Tables\Actions\BulkAction $action, array $data) {
-                            $totalPaymentAmount = CurrencyConverter::convertToCents($data['amount']);
-                            $remainingAmount = $totalPaymentAmount;
+                        ->action(function (Collection $records, Tables\Actions\BulkAction $action) {
+                            $records->each(function (Order $record) {
+                                $record->markAsSent();
+                            });
 
-                            $records->each(function (Bill $record) use (&$remainingAmount, $data) {
-                                $amountDue = $record->getRawOriginal('amount_due');
+                            $action->success();
+                        }),
+                    Tables\Actions\BulkAction::make('markAsAccepted')
+                        ->label('Mark as Accepted')
+                        ->icon('heroicon-o-check-badge')
+                        ->databaseTransaction()
+                        ->successNotificationTitle('Orders Accepted')
+                        ->failureNotificationTitle('Failed to Mark Orders as Accepted')
+                        ->before(function (Collection $records, Tables\Actions\BulkAction $action) {
+                            $isInvalid = $records->contains(fn (Order $record) => ! $record->canBeMarkedAsAccepted());
 
-                                if ($amountDue <= 0 || $remainingAmount <= 0) {
-                                    return;
-                                }
+                            if ($isInvalid) {
+                                Notification::make()
+                                    ->title('Acceptance Failed')
+                                    ->body('Only sent estimates that haven\'t been accepted can be marked as accepted. Please adjust your selection and try again.')
+                                    ->persistent()
+                                    ->danger()
+                                    ->send();
 
-                                $paymentAmount = min($amountDue, $remainingAmount);
-                                $data['amount'] = CurrencyConverter::convertCentsToFormatSimple($paymentAmount);
+                                $action->cancel(true);
+                            }
+                        })
+                        ->action(function (Collection $records, Tables\Actions\BulkAction $action) {
+                            $records->each(function (Order $record) {
+                                $record->markAsAccepted();
+                            });
 
-                                $record->recordPayment($data);
-                                $remainingAmount -= $paymentAmount;
+                            $action->success();
+                        }),
+                    Tables\Actions\BulkAction::make('markAsDeclined')
+                        ->label('Mark as Declined')
+                        ->icon('heroicon-o-x-circle')
+                        ->requiresConfirmation()
+                        ->databaseTransaction()
+                        ->color('danger')
+                        ->modalHeading('Mark Estimates as Declined')
+                        ->modalDescription('Are you sure you want to mark the selected estimates as declined? This action cannot be undone.')
+                        ->successNotificationTitle('Estimates Declined')
+                        ->failureNotificationTitle('Failed to Mark Estimates as Declined')
+                        ->before(function (Collection $records, Tables\Actions\BulkAction $action) {
+                            $isInvalid = $records->contains(fn (Order $record) => ! $record->canBeMarkedAsDeclined());
+
+                            if ($isInvalid) {
+                                Notification::make()
+                                    ->title('Declination Failed')
+                                    ->body('Only sent estimates that haven\'t been declined can be marked as declined. Please adjust your selection and try again.')
+                                    ->persistent()
+                                    ->danger()
+                                    ->send();
+
+                                $action->cancel(true);
+                            }
+                        })
+                        ->action(function (Collection $records, Tables\Actions\BulkAction $action) {
+                            $records->each(function (Order $record) {
+                                $record->markAsDeclined();
                             });
 
                             $action->success();
@@ -445,30 +415,31 @@ class BillResource extends Resource
     public static function getRelations(): array
     {
         return [
-            BillResource\RelationManagers\PaymentsRelationManager::class,
+            //
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListBills::route('/'),
-            'create' => Pages\CreateBill::route('/create'),
-            'view' => Pages\ViewBill::route('/{record}'),
-            'edit' => Pages\EditBill::route('/{record}/edit'),
+            'index' => Pages\ListOrders::route('/'),
+            'create' => Pages\CreateOrder::route('/create'),
+            'view' => Pages\ViewOrder::route('/{record}'),
+            'edit' => Pages\EditOrder::route('/{record}/edit'),
         ];
     }
 
-    public static function getWidgets(): array
-    {
-        return [
-            BillResource\Widgets\BillOverview::class,
-        ];
-    }
+    // public static function getWidgets(): array
+    // {
+    //     return [
+    //         // Widgets\OrderOverview::class,
+    //     ];
+    // }
 
     protected static function getRepeaterTables(): array
     {
         return [
+
             TableRepeater::make('lineItems')
                 ->relationship()
                 ->saveRelationshipsUsing(null)
@@ -494,14 +465,13 @@ class BillResource extends Resource
                 })
                 ->schema([
                     Forms\Components\Select::make('offering_id')
-                        ->label('Item')
                         ->relationship('purchasableOffering', 'name')
                         ->preload()
                         ->searchable()
                         ->required()
                         ->live()
                         ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
-                            logger()->info($state);
+
                             $offeringId = $state;
                             $offeringRecord = Offering::with(['purchaseTaxes', 'purchaseDiscounts'])->find($offeringId);
 
@@ -523,13 +493,10 @@ class BillResource extends Resource
                         ->live()
                         ->default(1),
                     Forms\Components\TextInput::make('unit_price')
-                        ->label('Price')
-                        ->hiddenLabel()
-                        ->numeric()
+                        ->money()
                         ->live()
                         ->default(0),
                     Forms\Components\Select::make('purchaseTaxes')
-                        ->label('Taxes')
                         ->relationship('purchaseTaxes', 'name')
                         ->saveRelationshipsUsing(null)
                         ->dehydrated(true)
@@ -553,10 +520,10 @@ class BillResource extends Resource
                         ->searchable(),
                     Forms\Components\Placeholder::make('total')
                         ->hiddenLabel()
-                        ->extraAttributes(['class' => 'text-left sm:text-right'])
+                        //  ->extraAttributes(['class' => 'text-left sm:text-right'])
                         ->content(function (Forms\Get $get) {
                             $quantity = max((float) ($get('quantity') ?? 0), 0);
-                            $unitPrice = max((float) ($get('unit_price') ?? 0), 0);
+                            $unitPrice = $get('unit_price') ?? 0;
                             $purchaseTaxes = $get('purchaseTaxes') ?? [];
                             $purchaseDiscounts = $get('purchaseDiscounts') ?? [];
                             $currencyCode = $get('../../currency_code') ?? CurrencyAccessor::getDefaultCurrency();
@@ -621,20 +588,20 @@ class BillResource extends Resource
                 })
                 ->schema([
                     Forms\Components\Select::make('product_id')
-                        ->label('Product')
+
                         ->relationship('purchasableProducts', 'product_name')
                         ->preload()
                         ->searchable()
                         ->required()
                         ->live()
                         ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
-                            logger()->warning($state);
+
                             $offeringId = $state;
                             $offeringRecord = Product::with(['purchaseTaxes', 'purchaseDiscounts'])->find($offeringId);
 
                             if ($offeringRecord) {
                                 $set('description', $offeringRecord->product_note);
-                                $set('unit_price', $offeringRecord->product_price);
+                                $set('unit_price', $offeringRecord->product_cost);
                                 $set('purchaseTaxes', $offeringRecord->purchaseTaxes->pluck('id')->toArray());
 
                                 $discountMethod = DocumentDiscountMethod::parse($get('../../discount_method'));
@@ -650,13 +617,11 @@ class BillResource extends Resource
                         ->live()
                         ->default(1),
                     Forms\Components\TextInput::make('unit_price')
-                        ->label('Price')
                         ->hiddenLabel()
                         ->numeric()
                         ->live()
                         ->default(0),
                     Forms\Components\Select::make('purchaseTaxes')
-                        ->label('Taxes')
                         ->relationship('purchaseTaxes', 'name')
                         ->saveRelationshipsUsing(null)
                         ->dehydrated(true)
@@ -664,8 +629,7 @@ class BillResource extends Resource
                         ->multiple()
                         ->live()
                         ->searchable(),
-                    Forms\Components\Select::make('purchaseDiscounts')
-                        ->label('Discounts')
+                    Forms\Components\Select::make('purchaeDiscounts')
                         ->relationship('purchaseDiscounts', 'name')
                         ->saveRelationshipsUsing(null)
                         ->dehydrated(true)
@@ -680,7 +644,7 @@ class BillResource extends Resource
                         ->searchable(),
                     Forms\Components\Placeholder::make('total')
                         ->hiddenLabel()
-                        //->extraAttributes(['class' => 'text-left sm:text-right'])
+                        // ->extraAttributes(['class' => 'text-left sm:text-right'])
                         ->content(function (Forms\Get $get) {
                             $quantity = max((float) ($get('quantity') ?? 0), 0);
                             $unitPrice = max((float) ($get('unit_price') ?? 0), 0);
@@ -723,7 +687,7 @@ class BillResource extends Resource
                     return $itemType === ItemType::inventory_product->value;
                 }),
             DocumentTotals::make()
-                ->type(DocumentType::Bill),
+                ->type(DocumentType::Order),
         ];
     }
 }

@@ -68,7 +68,7 @@ class StockMovementService
         $product = Product::findOrFail($productId);
 
         if ($type === 'addition') {
-            $product->increment('stock', $quantity);
+            $product->increment('product_quantity', $quantity);
         } elseif ($type === 'subtraction') {
             if ($product->product_quantity < $quantity) {
                 throw new Exception("Insufficient stock for product ID: {$productId}");

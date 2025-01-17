@@ -6,6 +6,7 @@ use App\Enums\Setting\DocumentType;
 use App\Models\Accounting\AccountSubtype;
 use App\Models\Accounting\Adjustment;
 use App\Models\Accounting\Estimate;
+use App\Models\Accounting\Order;
 use App\Models\Accounting\StockMovement;
 use App\Models\Banking\BankAccount;
 use App\Models\Banking\ConnectedBankAccount;
@@ -138,6 +139,11 @@ class Company extends FilamentCompaniesCompany implements HasAvatar
     public function estimates(): HasMany
     {
         return $this->hasMany(Estimate::class, 'company_id');
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'company_id');
     }
 
     public function departments(): HasMany

@@ -31,6 +31,8 @@ class Adjustment extends Model
 
     protected $table = 'adjustments';
 
+    protected $primaryKey = 'id';
+
     protected $fillable = [
         'company_id',
         'account_id',

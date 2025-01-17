@@ -109,6 +109,8 @@ class InvoiceResource extends Resource
                                     ->live()
                                     ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
                                         if (! $state) {
+                                            $set('currency_code', null);
+
                                             return;
                                         }
 
@@ -605,6 +607,7 @@ class InvoiceResource extends Resource
                 })
                 ->schema([
                     Forms\Components\Select::make('offering_id')
+                        ->label('Item')
                         ->relationship('sellableOffering', 'name')
                         ->preload()
                         ->searchable()
@@ -633,7 +636,6 @@ class InvoiceResource extends Resource
                         ->live()
                         ->default(1),
                     Forms\Components\TextInput::make('unit_price')
-                        ->hiddenLabel()
                         ->numeric()
                         ->live()
                         ->default(0),
@@ -729,6 +731,7 @@ class InvoiceResource extends Resource
                 })
                 ->schema([
                     Forms\Components\Select::make('product_id')
+                        ->label('Product')
                         ->relationship('purchasableProducts', 'product_name')
                         ->preload()
                         ->searchable()
@@ -757,7 +760,6 @@ class InvoiceResource extends Resource
                         ->live()
                         ->default(1),
                     Forms\Components\TextInput::make('unit_price')
-                        ->hiddenLabel()
                         ->numeric()
                         ->live()
                         ->default(0),
@@ -771,6 +773,7 @@ class InvoiceResource extends Resource
                         ->searchable(),
 
                     Forms\Components\Select::make('salesDiscounts')
+                        // ->hiddenLabel()
                         ->relationship('salesDiscounts', 'name')
                         ->saveRelationshipsUsing(null)
                         ->dehydrated(true)

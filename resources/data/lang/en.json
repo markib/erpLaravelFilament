@@ -222,5 +222,8 @@
     "Estimate Header": "Estimate Header",
     "Estimate Details": "Estimate Details",
     "Estimate Footer": "Estimate Footer",
-    "Line Items and Totals": "Line Items and Totals"
+    "Line Items and Totals": "Line Items and Totals",
+    "Order Header": "Order Header",
+    "Order Details": "Order Details",
+    "Order Footer": "Order Footer"
 }

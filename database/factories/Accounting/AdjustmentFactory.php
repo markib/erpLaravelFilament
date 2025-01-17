@@ -25,11 +25,12 @@ class AdjustmentFactory extends Factory
 
         return [
             'account_id' => Account::factory(),
+            'name' => $this->faker->word(),
             'type' => $this->faker->randomElement(AdjustmentType::cases()), // Example type for tax or discount
             'category' => $this->faker->randomElement(AdjustmentCategory::cases()), // Example category for tax or discount
             'rate' => $this->faker->randomFloat(2, 5, 20), // Example rate for tax or discount
             'computation' => $this->faker->randomElement(AdjustmentComputation::cases())->value, // Ensure it's a valid value
-            'company_id' => Company::factory(),
+            // 'company_id' => Company::factory(),
             'created_by' => User::factory(),
             'updated_by' => User::factory(),
         ];
@@ -57,5 +58,15 @@ class AdjustmentFactory extends Factory
         return $this->state([
             'category' => AdjustmentCategory::Tax->value, // Adjusting the type to 'Tax'
         ]);
+    }
+
+    // In AdjustmentFactory.php
+    public function forCompany($companyId)
+    {
+        return $this->state(function (array $attributes) use ($companyId) {
+            return [
+                'company_id' => $companyId,
+            ];
+        });
     }
 }
