@@ -10,6 +10,7 @@ use App\Enums\Accounting\AdjustmentType;
 use App\Enums\Common\OfferingType;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Adjustment;
+use App\Models\Company;
 use App\Observers\OfferingObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -38,6 +39,8 @@ class Offering extends Model
         'created_by',
         'updated_by',
     ];
+
+    protected $primaryKey = 'id';
 
     protected $casts = [
         'type' => OfferingType::class,
@@ -123,5 +126,10 @@ class Offering extends Model
     public function purchaseDiscounts(): MorphToMany
     {
         return $this->adjustments()->where('category', AdjustmentCategory::Discount)->where('type', AdjustmentType::Purchase);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 }

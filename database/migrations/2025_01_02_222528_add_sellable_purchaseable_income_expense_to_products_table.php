@@ -26,7 +26,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            $table->dropForeign(['income_account_id', 'expense_account_id']);
+            // $table->dropForeign(['income_account_id', 'expense_account_id']);
             $table->dropColumn(['sku', 'sellable', 'purchasable', 'income_account_id', 'expense_account_id']);
         });
     }

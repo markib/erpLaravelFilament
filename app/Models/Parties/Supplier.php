@@ -7,6 +7,7 @@ use App\Concerns\CompanyOwned;
 use App\Concerns\SyncsWithCompanyDefaults;
 use App\Models\Accounting\Bill;
 use App\Models\Locale\Currency;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,6 +16,7 @@ class Supplier extends Model
 {
     use Blamable;
     use CompanyOwned;
+    use HasFactory;
     use SyncsWithCompanyDefaults;
 
     protected $table = 'suppliers';

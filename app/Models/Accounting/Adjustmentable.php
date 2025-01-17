@@ -9,6 +9,10 @@ class Adjustmentable extends Model
 {
     protected $table = 'adjustmentables';
 
+    protected $primaryKey = 'id';
+
+    protected $timeStamps = false;
+
     protected $fillable = [
         'adjustment_id',
         'adjustmentable_id',

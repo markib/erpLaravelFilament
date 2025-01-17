@@ -10,6 +10,7 @@ enum DocumentType: string implements HasIcon, HasLabel
     case Invoice = 'invoice';
     case Bill = 'bill';
     case Estimate = 'estimate';
+    case Order = 'order';
 
     public const DEFAULT = self::Invoice->value;
 
@@ -32,6 +33,7 @@ enum DocumentType: string implements HasIcon, HasLabel
             self::Invoice => 'salesTaxes',
             self::Estimate => 'salesTaxes',
             self::Bill => 'purchaseTaxes',
+            self::Order => 'purchaseTaxes',
         };
     }
 
@@ -41,6 +43,7 @@ enum DocumentType: string implements HasIcon, HasLabel
             self::Invoice => 'salesDiscounts',
             self::Estimate => 'salesDiscounts',
             self::Bill => 'purchaseDiscounts',
+            self::Order => 'purchaseDiscounts',
         };
     }
 
@@ -66,6 +69,13 @@ enum DocumentType: string implements HasIcon, HasLabel
                 'number' => 'Bill Number',
                 'reference_number' => 'P.O/S.O Number',
                 'date' => 'Bill Date',
+                'due_date' => 'Payment Due',
+            ],
+            self::Order => [
+                'title' => 'Order',
+                'number' => 'Order Number',
+                'reference_number' => 'P.O/S.O Number',
+                'date' => 'Order Date',
                 'due_date' => 'Payment Due',
             ],
         };

@@ -1,22 +1,22 @@
 <?php
 
-namespace App\Filament\Company\Resources\Purchases\BillResource\Pages;
+namespace App\Filament\Company\Resources\Purchases\OrderResource\Pages;
 
 use App\Concerns\ManagesLineItems;
 use App\Concerns\RedirectToListPage;
-use App\Filament\Company\Resources\Purchases\BillResource;
-use App\Models\Accounting\Bill;
+use App\Filament\Company\Resources\Purchases\OrderResource;
+use App\Models\Accounting\Order;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Database\Eloquent\Model;
 
-class EditBill extends EditRecord
+class EditOrder extends EditRecord
 {
     use ManagesLineItems;
     use RedirectToListPage;
 
-    protected static string $resource = BillResource::class;
+    protected static string $resource = OrderResource::class;
 
     protected function getHeaderActions(): array
     {
@@ -32,7 +32,7 @@ class EditBill extends EditRecord
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        /** @var Bill $record */
+        /** @var Order $record */
         $lineItems = collect($data['lineItems'] ?? []);
 
         $this->deleteRemovedLineItems($record, $lineItems);
@@ -43,12 +43,6 @@ class EditBill extends EditRecord
 
         $data = array_merge($data, $totals);
 
-        $record = parent::handleRecordUpdate($record, $data);
-
-        if ($record->approved_at && $record->approvalTransaction) {
-            $record->updateApprovalTransaction();
-        }
-
-        return $record;
+        return parent::handleRecordUpdate($record, $data);
     }
 }

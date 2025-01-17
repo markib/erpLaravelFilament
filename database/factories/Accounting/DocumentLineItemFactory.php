@@ -37,7 +37,8 @@ class DocumentLineItemFactory extends Factory
     public function forInvoice(): static
     {
         return $this->state(function (array $attributes) {
-            $offering = Offering::factory()->create(['sellable' => true]);
+            // $offering = Offering::factory()->create(['sellable' => true]);
+            $offering = Offering::factory(['company_id' => 1, 'sellable' => true])->withPurchaseTaxes()->withPurchaseDiscounts()->create();
 
             return [
                 'offering_id' => $offering->id,
@@ -81,8 +82,39 @@ class DocumentLineItemFactory extends Factory
             }
 
             $lineItem->refresh();
-
+            logger()->info('Starting tax total calculation : ' . $lineItem->id);
             $taxTotal = $lineItem->calculateTaxTotal()->getAmount();
+            logger()->info('Tax total calculated: ', ['total' => $taxTotal]);
+            $discountTotal = $lineItem->calculateDiscountTotal()->getAmount();
+
+            $lineItem->updateQuietly([
+                'tax_total' => $taxTotal,
+                'discount_total' => $discountTotal,
+            ]);
+        });
+    }
+
+    public function forOrder(): static
+    {
+        return $this->state(function (array $attributes) {
+            $offering = Offering::factory(['company_id' => 1, 'purchasable' => true])->withPurchaseTaxes()->withPurchaseDiscounts()->create();
+
+            return [
+                'offering_id' => $offering->id,
+                'unit_price' => $offering->price,
+            ];
+        })->afterCreating(function (DocumentLineItem $lineItem) {
+            $offering = $lineItem->offering;
+
+            if ($offering) {
+                $lineItem->purchaseTaxes()->syncWithoutDetaching($offering->purchaseTaxes->pluck('id')->toArray());
+                $lineItem->purchaseDiscounts()->syncWithoutDetaching($offering->purchaseDiscounts->pluck('id')->toArray());
+            }
+
+            $lineItem->refresh();
+            //  logger()->info('Starting tax total calculation : ' . $lineItem->id);
+            $taxTotal = $lineItem->calculateTaxTotal()->getAmount();
+            //logger()->info('Tax total calculated: ', ['total' => $taxTotal]);
             $discountTotal = $lineItem->calculateDiscountTotal()->getAmount();
 
             $lineItem->updateQuietly([

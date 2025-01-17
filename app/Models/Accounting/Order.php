@@ -8,14 +8,14 @@ use App\Collections\Accounting\DocumentCollection;
 use App\Concerns\Blamable;
 use App\Concerns\CompanyOwned;
 use App\Enums\Accounting\AdjustmentComputation;
+use App\Enums\Accounting\BillStatus;
 use App\Enums\Accounting\DocumentDiscountMethod;
-use App\Enums\Accounting\EstimateStatus;
-use App\Enums\Accounting\InvoiceStatus;
-use App\Filament\Company\Resources\Sales\EstimateResource;
-use App\Filament\Company\Resources\Sales\InvoiceResource;
-use App\Models\Parties\Customer;
+use App\Enums\Accounting\OrderStatus;
+use App\Filament\Company\Resources\Purchases\BillResource;
+use App\Filament\Company\Resources\Purchases\OrderResource;
+use App\Models\Parties\Supplier;
 use App\Models\Setting\Currency;
-use App\Observers\EstimateObserver;
+use App\Observers\OrderObserver;
 use Filament\Actions\Action;
 use Filament\Actions\MountableAction;
 use Filament\Actions\ReplicateAction;
@@ -31,8 +31,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 
 #[CollectedBy(DocumentCollection::class)]
-#[ObservedBy(EstimateObserver::class)]
-class Estimate extends Model
+#[ObservedBy(OrderObserver::class)]
+class Order extends Model
 {
     use Blamable;
     use CompanyOwned;
@@ -40,11 +40,11 @@ class Estimate extends Model
 
     protected $fillable = [
         'company_id',
-        'client_id',
+        'vendor_id',
         'logo',
         'header',
         'subheader',
-        'estimate_number',
+        'order_number',
         'reference_number',
         'date',
         'expiration_date',
@@ -78,7 +78,7 @@ class Estimate extends Model
         'declined_at' => 'datetime',
         'last_sent_at' => 'datetime',
         'last_viewed_at' => 'datetime',
-        'status' => EstimateStatus::class,
+        'status' => OrderStatus::class,
         'discount_method' => DocumentDiscountMethod::class,
         'discount_computation' => AdjustmentComputation::class,
         'discount_rate' => RateCast::class,
@@ -88,9 +88,9 @@ class Estimate extends Model
         'total' => MoneyCast::class,
     ];
 
-    public function client(): BelongsTo
+    public function vendor(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Supplier::class);
     }
 
     public function currency(): BelongsTo
@@ -98,9 +98,9 @@ class Estimate extends Model
         return $this->belongsTo(Currency::class, 'currency_code', 'code');
     }
 
-    public function invoice(): HasOne
+    public function bill(): HasOne
     {
-        return $this->hasOne(Invoice::class);
+        return $this->hasOne(Bill::class);
     }
 
     public function lineItems(): MorphMany
@@ -117,7 +117,7 @@ class Estimate extends Model
 
     public function isDraft(): bool
     {
-        return $this->status === EstimateStatus::Draft;
+        return $this->status === OrderStatus::Draft;
     }
 
     public function wasApproved(): bool
@@ -153,10 +153,10 @@ class Estimate extends Model
     public function canBeExpired(): bool
     {
         return ! in_array($this->status, [
-            EstimateStatus::Draft,
-            EstimateStatus::Accepted,
-            EstimateStatus::Declined,
-            EstimateStatus::Converted,
+            OrderStatus::Draft,
+            OrderStatus::Accepted,
+            OrderStatus::Declined,
+            OrderStatus::Converted,
         ]);
     }
 
@@ -196,13 +196,23 @@ class Estimate extends Model
         return $this->lineItems()->exists();
     }
 
+    // public function hasInitialTransaction(): bool
+    // {
+    //     return $this->initialTransaction()->exists();
+    // }
+
+    // public function initialTransaction(): HasOne
+    // {
+    //     return $this->hasOne(Bill::class);
+    // }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->whereIn('status', [
-            EstimateStatus::Unsent,
-            EstimateStatus::Sent,
-            EstimateStatus::Viewed,
-            EstimateStatus::Accepted,
+            OrderStatus::Unsent,
+            OrderStatus::Sent,
+            OrderStatus::Viewed,
+            OrderStatus::Accepted,
         ]);
     }
 
@@ -214,23 +224,23 @@ class Estimate extends Model
             throw new \RuntimeException('No current company is set for the user.');
         }
 
-        $defaultEstimateSettings = $company->defaultInvoice;
+        $defaultOderSettings = $company->defaultInvoice;
 
-        $numberPrefix = 'EST-';
-        $numberDigits = $defaultEstimateSettings->number_digits;
+        $numberPrefix = 'ORD-';
+        $numberDigits = $defaultOderSettings->number_digits;
 
         $latestDocument = static::query()
-            ->whereNotNull('estimate_number')
-            ->latest('estimate_number')
+            ->whereNotNull('order_number')
+            ->latest('order_number')
             ->first();
 
         $lastNumberNumericPart = $latestDocument
-            ? (int) substr($latestDocument->estimate_number, strlen($numberPrefix))
+            ? (int) substr($latestDocument->order_number, strlen($numberPrefix))
             : 0;
 
         $numberNext = $lastNumberNumericPart + 1;
 
-        return $defaultEstimateSettings->getNumberNext(
+        return $defaultOderSettings->getNumberNext(
             padded: true,
             format: true,
             prefix: $numberPrefix,
@@ -242,14 +252,14 @@ class Estimate extends Model
     public function approveDraft(?Carbon $approvedAt = null): void
     {
         if (! $this->isDraft()) {
-            throw new \RuntimeException('Estimate is not in draft status.');
+            throw new \RuntimeException('Order is not in draft status.');
         }
 
         $approvedAt ??= now();
 
         $this->update([
             'approved_at' => $approvedAt,
-            'status' => EstimateStatus::Unsent,
+            'status' => OrderStatus::Unsent,
         ]);
     }
 
@@ -262,7 +272,7 @@ class Estimate extends Model
                 return $record->canBeApproved();
             })
             ->databaseTransaction()
-            ->successNotificationTitle('Estimate Approved')
+            ->successNotificationTitle('Order Approved')
             ->action(function (self $record, MountableAction $action) {
                 $record->approveDraft();
 
@@ -278,7 +288,7 @@ class Estimate extends Model
             ->visible(static function (self $record) {
                 return $record->canBeMarkedAsSent();
             })
-            ->successNotificationTitle('Estimate Sent')
+            ->successNotificationTitle('Order Sent')
             ->action(function (self $record, MountableAction $action) {
                 $record->markAsSent();
 
@@ -291,7 +301,7 @@ class Estimate extends Model
         $sentAt ??= now();
 
         $this->update([
-            'status' => EstimateStatus::Sent,
+            'status' => OrderStatus::Sent,
             'last_sent_at' => $sentAt,
         ]);
     }
@@ -301,7 +311,7 @@ class Estimate extends Model
         $viewedAt ??= now();
 
         $this->update([
-            'status' => EstimateStatus::Viewed,
+            'status' => OrderStatus::Viewed,
             'last_viewed_at' => $viewedAt,
         ]);
     }
@@ -310,7 +320,7 @@ class Estimate extends Model
     {
         return $action::make()
             ->excludeAttributes([
-                'estimate_number',
+                'order_number',
                 'date',
                 'expiration_date',
                 'approved_at',
@@ -327,8 +337,8 @@ class Estimate extends Model
             ])
             ->modal(false)
             ->beforeReplicaSaved(function (self $original, self $replica) {
-                $replica->status = EstimateStatus::Draft;
-                $replica->estimate_number = self::getNextDocumentNumber();
+                $replica->status = OrderStatus::Draft;
+                $replica->order_number = self::getNextDocumentNumber();
                 $replica->date = now();
                 $replica->expiration_date = now()->addDays($original->company->defaultInvoice->payment_terms->getDays());
             })
@@ -337,7 +347,7 @@ class Estimate extends Model
                 $original->replicateLineItems($replica);
             })
             ->successRedirectUrl(static function (self $replica) {
-                return EstimateResource::getUrl('edit', ['record' => $replica]);
+                return OrderResource::getUrl('edit', ['record' => $replica]);
             });
     }
 
@@ -350,7 +360,7 @@ class Estimate extends Model
                 return $record->canBeMarkedAsAccepted();
             })
             ->databaseTransaction()
-            ->successNotificationTitle('Estimate Accepted')
+            ->successNotificationTitle('Order Accepted')
             ->action(function (self $record, MountableAction $action) {
                 $record->markAsAccepted();
 
@@ -363,7 +373,7 @@ class Estimate extends Model
         $acceptedAt ??= now();
 
         $this->update([
-            'status' => EstimateStatus::Accepted,
+            'status' => OrderStatus::Accepted,
             'accepted_at' => $acceptedAt,
         ]);
     }
@@ -379,7 +389,7 @@ class Estimate extends Model
             ->color('danger')
             ->requiresConfirmation()
             ->databaseTransaction()
-            ->successNotificationTitle('Estimate Declined')
+            ->successNotificationTitle('Order Declined')
             ->action(function (self $record, MountableAction $action) {
                 $record->markAsDeclined();
 
@@ -392,47 +402,48 @@ class Estimate extends Model
         $declinedAt ??= now();
 
         $this->update([
-            'status' => EstimateStatus::Declined,
+            'status' => OrderStatus::Declined,
             'declined_at' => $declinedAt,
         ]);
     }
 
-    public static function getConvertToInvoiceAction(string $action = Action::class): MountableAction
+    public static function getConvertToBillAction(string $action = Action::class): MountableAction
     {
-        return $action::make('convertToInvoice')
-            ->label('Convert to Invoice')
+        return $action::make('convertToBill')
+            ->label('Convert to Bill')
             ->icon('heroicon-o-arrow-right-on-rectangle')
             ->visible(static function (self $record) {
                 return $record->canBeConverted();
             })
             ->databaseTransaction()
-            ->successNotificationTitle('Estimate Converted to Invoice')
+            ->successNotificationTitle('Order Converted to Bill')
             ->action(function (self $record, MountableAction $action) {
-                $record->convertToInvoice();
+                $record->convertToBill();
 
                 $action->success();
             })
             ->successRedirectUrl(static function (self $record) {
-                return InvoiceResource::getUrl('edit', ['record' => $record->refresh()->invoice]);
+
+                return BillResource::getUrl('edit', ['record' => $record->refresh()->bill]);
             });
     }
 
-    public function convertToInvoice(?Carbon $convertedAt = null): void
+    public function convertToBill(?Carbon $convertedAt = null): void
     {
-        if ($this->invoice) {
-            throw new \RuntimeException('Estimate has already been converted to an invoice.');
+        if ($this->order) {
+            throw new \RuntimeException('Order has already been converted to an bill.');
         }
 
-        $invoice = $this->invoice()->create([
+        $bill = $this->bill()->create([
             'company_id' => $this->company_id,
-            'client_id' => $this->client_id,
+            'vendor_id' => $this->vendor_id,
             'logo' => $this->logo,
             'header' => $this->company->defaultInvoice->header,
             'subheader' => $this->company->defaultInvoice->subheader,
-            'invoice_number' => Invoice::getNextDocumentNumber($this->company),
+            'bill_number' => Bill::getNextDocumentNumber($this->company),
             'date' => now(),
             'due_date' => now()->addDays($this->company->defaultInvoice->payment_terms->getDays()),
-            'status' => InvoiceStatus::Draft,
+            'status' => BillStatus::Draft,
             'currency_code' => $this->currency_code,
             'discount_method' => $this->discount_method,
             'discount_computation' => $this->discount_computation,
@@ -446,15 +457,15 @@ class Estimate extends Model
             'created_by' => auth()->id(),
             'updated_by' => auth()->id(),
             'item_type' => $this->item_type,
-            'estimate_id' => $this->id,
+            'order_id' => $this->id,
         ]);
 
-        $this->replicateLineItems($invoice);
+        $this->replicateLineItems($bill);
 
         $convertedAt ??= now();
 
         $this->update([
-            'status' => EstimateStatus::Converted,
+            'status' => OrderStatus::Converted,
             'converted_at' => $convertedAt,
         ]);
     }

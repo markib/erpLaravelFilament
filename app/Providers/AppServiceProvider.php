@@ -6,6 +6,7 @@ use App\Models\Accounting\Bill;
 use App\Models\Accounting\Estimate;
 use App\Models\Accounting\Invoice;
 use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\Order;
 use App\Models\Banking\BankAccount;
 use App\Models\Common\Offering;
 use App\Models\Product\Product;
@@ -49,7 +50,7 @@ class AppServiceProvider extends ServiceProvider
             'offering' => Offering::class,
             'product' => Product::class,
             'estimate' => Estimate::class,
-
+            'order' => Order::class,
         ]);
     }
 }

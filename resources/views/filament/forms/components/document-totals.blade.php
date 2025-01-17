@@ -6,6 +6,7 @@
     $data = $this->form->getRawState();
     $type = $getType();
     $viewModel = new DocumentTotalViewModel($data, $type);
+    
     extract($viewModel->buildViewData(), EXTR_SKIP);
 
     $discountMethod = DocumentDiscountMethod::parse($data['discount_method']);

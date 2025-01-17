@@ -54,7 +54,7 @@ class DocumentPreviewViewModel
     private function getClientDetails(): array
     {
         /** @var Client $client */
-        $client = $this->document->client;
+        $client = $this->document?->client ?? $this->document?->vendor;
         $address = $client->billingAddress ?? null;
 
         return [
