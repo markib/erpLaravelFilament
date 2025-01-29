@@ -161,6 +161,8 @@ it('allows the user to delete an existing order', function () {
 });
 
 it('allows the user to approve an existing order', function () {
+    $now = now();
+    Carbon::setTestNow($now);
     // Assume $this->order is already created and unapproved
     $orderId = $this->order->id;
 
@@ -168,41 +170,74 @@ it('allows the user to approve an existing order', function () {
     expect(Order::find($orderId))->not->toBeNull();
     expect($this->order->status)->toBe(OrderStatus::Draft);
 
-    // Mount the Livewire component and call the approve action
-    // $component =Livewire::test(ListOrders::class)
-    //     ->assertTableActionExists('approveDraft')
-    //     ->callTableAction('approveDraft', $this->order)
-    //     ->assertSuccessful()
-    //     ->assertHasNoErrors();
     $this->order->expiration_date = now()->addDays(30);
     $this->order->save();
 
-    $now = Carbon::now();
-    $this->order->approveDraft($now);
+    // Mount the Livewire component and call the approve action
+    Livewire::test(ListOrders::class)
+        ->assertTableActionExists('approveDraft')
+        ->callTableAction('approveDraft', $this->order)
+        ->assertSuccessful()
+        ->assertHasNoErrors();
+
+    // $this->order->approveDraft($now);
     // Refresh the order from the database
 
     $this->order->refresh();
 
+    $expectedCarbon = Carbon::parse($now);
+    $actualTimestamp = Carbon::parse($this->order->approved_at);
+
     // Assert that the order is now approved
     expect($this->order->status)->toBe(OrderStatus::Unsent);
+    // Allow a small margin of error for timestamp comparison
+    expect($actualTimestamp->diffInSeconds($expectedCarbon) <= 2)->toBeTrue();
+});
+
+it('allows the user to bulk approve an existing order', function () {
+    $orders = Order::factory(['company_id' => $this->testCompany->id, 'vendor_id' => $this->vendor->first()->id])->count(4)->withLineItems(2)->create();
+    $now = now();
+    Carbon::setTestNow($now);
+
+    // Assert that all orders exist and are in draft status before the action
+    foreach ($orders as $order) {
+        $orderId = $order->id;
+        expect(Order::find($orderId))->not->toBeNull();
+        expect($order->status)->toBe(OrderStatus::Draft);
+    }
+
+    // Set expiration date for all orders
+    $orders->each(function (Order $order) {
+        $order->expiration_date = now()->addDays(30);
+        $order->save();
+    });
+
+    // Mount the Livewire component and call the approve action
+    Livewire::test(ListOrders::class)
+        ->assertTableBulkActionExists('approveDrafts')
+        ->callTableBulkAction('approveDrafts', $orders)
+        ->assertSuccessful()
+        ->assertHasNoErrors();
+
+    foreach ($orders as $order) {
+        $order->refresh();
+        $expectedCarbon = Carbon::parse($now);
+        $actualTimestamp = Carbon::parse($order->approved_at);
+
+        // Assert that the order is now approved
+        expect($order->status)->toBe(OrderStatus::Unsent);
+        // Allow a small margin of error for timestamp comparison
+        expect($actualTimestamp->diffInSeconds($expectedCarbon) <= 2)->toBeTrue();
+    }
 });
 
 it('allows the user to mark as sent for existing order', function () {
     // Assume $this->order is already created and unapproved
-
     $orderId = $this->order->id;
 
     // Assert that the order exists and is not approved before the action
     expect(Order::find($orderId))->not->toBeNull();
 
-    // expect($this->order->status)->toBe(OrderStatus::Draft);
-
-    // $this->order->approveDraft();
-    // $this->order->refresh();
-
-    // expect($this->order->status)->toBe(OrderStatus::Unsent);
-
-    // Mount the Livewire component and call the approve action
     Livewire::test(ListOrders::class)
         ->callTableAction('markAsSent', $this->order)
         ->assertSuccessful();
@@ -213,4 +248,59 @@ it('allows the user to mark as sent for existing order', function () {
     // Assert that the order is now approved
     expect($this->order->status)->toBe(OrderStatus::Sent);
 
+});
+
+it('allows the user to markAsAccepted for existing order', function () {
+
+    $now = now();
+    Carbon::setTestNow($now);
+    // $this->order->markAsAccepted($now);
+    $orderId = $this->order->id;
+
+    // Assert that the order exists and is not approved before the action
+    expect(Order::find($orderId))->not->toBeNull();
+    expect($this->order->status)->toBe(OrderStatus::Draft);
+
+    $this->order->approveDraft($now);
+    $this->order->markAsSent($now);
+    Livewire::test(ListOrders::class)
+        ->callTableAction('markAsAccepted', $this->order)
+        ->assertSuccessful();
+
+    $this->order->refresh();
+    $expectedCarbon = Carbon::parse($now);
+    $actualTimestamp = Carbon::parse($this->order->accepted_at);
+
+    expect($this->order->status)->toBe(OrderStatus::Accepted);
+    expect($actualTimestamp->diffInSeconds($expectedCarbon) <= 2)->toBeTrue();
+
+});
+
+it('allows the user to convertToBill for existing order', function () {
+
+    $now = now();
+    Carbon::setTestNow($now);
+    // $this->order->markAsAccepted($now);
+    $orderId = $this->order->id;
+
+    // Assert that the order exists and is not approved before the action
+    expect(Order::find($orderId))->not->toBeNull();
+    expect($this->order->status)->toBe(OrderStatus::Draft);
+
+    $this->order->approveDraft($now);
+    $this->order->markAsSent($now);
+    $this->order->markAsAccepted($now);
+    Livewire::test(ListOrders::class)
+        ->assertTableActionExists('convertToBill')
+        ->callTableAction('convertToBill', $this->order)
+        ->assertSuccessful();
+
+    $this->order->refresh();
+
+    $expectedCarbon = Carbon::parse($now);
+    $actualTimestamp = Carbon::parse($this->order->converted_at);
+
+    expect($this->order->status)->toBe(OrderStatus::Converted);
+    // Allow a small margin of error for timestamp comparison
+    expect($actualTimestamp->diffInSeconds($expectedCarbon) <= 2)->toBeTrue();
 });

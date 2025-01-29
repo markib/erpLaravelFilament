@@ -5,9 +5,9 @@ namespace App\Filament\Company\Resources\Purchases\BillResource\Pages;
 use App\Concerns\ManagesLineItems;
 use App\Concerns\RedirectToListPage;
 use App\Filament\Company\Resources\Purchases\BillResource;
+use App\Models\Accounting\Invoice;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Support\Enums\MaxWidth;
-use Illuminate\Database\Eloquent\Model;
 
 class CreateBill extends CreateRecord
 {
@@ -21,7 +21,7 @@ class CreateBill extends CreateRecord
         return MaxWidth::Full;
     }
 
-    protected function handleRecordCreation(array $data): Model
+    protected function handleRecordCreation(array $data): Invoice
     {
 
         /** @var Invoice $record */

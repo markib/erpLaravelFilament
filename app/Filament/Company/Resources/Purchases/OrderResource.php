@@ -75,7 +75,7 @@ class OrderResource extends Resource
                             ]),
                             Forms\Components\Group::make([
                                 Forms\Components\TextInput::make('header')
-                                    ->default('Order'),
+                                    ->default('Default Header'),
                                 Forms\Components\TextInput::make('subheader'),
                                 Forms\Components\View::make('filament.forms.components.company-info')
                                     ->viewData([
@@ -138,7 +138,7 @@ class OrderResource extends Resource
                             Forms\Components\Group::make([
                                 Forms\Components\TextInput::make('order_number')
                                     ->label('Order Number')
-                                    ->default(fn () => Order::getNextDocumentNumber()),
+                                    ->default(fn () => Order::getNextDocumentNumber(null, null)),
                                 Forms\Components\TextInput::make('reference_number')
                                     ->label('Reference Number'),
                                 Forms\Components\DatePicker::make('date')
@@ -243,7 +243,7 @@ class OrderResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
-                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\EditAction::make()->visible(fn (Order $record) => $record->status === OrderStatus::Converted->value),
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\DeleteAction::make(),
                     Order::getReplicateAction(Tables\Actions\ReplicateAction::class),
@@ -283,7 +283,7 @@ class OrderResource extends Resource
                         ])
                         ->beforeReplicaSaved(function (Order $replica) {
                             $replica->status = OrderStatus::Draft;
-                            $replica->estimate_number = Order::getNextDocumentNumber();
+                            $replica->order_number = Order::getNextDocumentNumber(null, null);
                             $replica->date = now();
                             $replica->expiration_date = now()->addDays($replica->company->defaultInvoice->payment_terms->getDays());
                         })
