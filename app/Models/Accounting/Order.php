@@ -216,9 +216,9 @@ class Order extends Model
         ]);
     }
 
-    public static function getNextDocumentNumber(): string
+    public static function getNextDocumentNumber($defaultCompany, $prefix): string
     {
-        $company = auth()->user()->currentCompany;
+        $company = $defaultCompany ?? auth()->user()->currentCompany;
 
         if (! $company) {
             throw new \RuntimeException('No current company is set for the user.');
@@ -226,7 +226,7 @@ class Order extends Model
 
         $defaultOderSettings = $company->defaultInvoice;
 
-        $numberPrefix = 'ORD-';
+        $numberPrefix = $prefix ?? 'ORD-';
         $numberDigits = $defaultOderSettings->number_digits;
 
         $latestDocument = static::query()
@@ -338,7 +338,7 @@ class Order extends Model
             ->modal(false)
             ->beforeReplicaSaved(function (self $original, self $replica) {
                 $replica->status = OrderStatus::Draft;
-                $replica->order_number = self::getNextDocumentNumber();
+                $replica->order_number = self::getNextDocumentNumber(null, null);
                 $replica->date = now();
                 $replica->expiration_date = now()->addDays($original->company->defaultInvoice->payment_terms->getDays());
             })
@@ -440,7 +440,8 @@ class Order extends Model
             'logo' => $this->logo,
             'header' => $this->company->defaultInvoice->header,
             'subheader' => $this->company->defaultInvoice->subheader,
-            'bill_number' => Bill::getNextDocumentNumber($this->company),
+            'bill_number' => Bill::getNextDocumentNumber($this->company, null),
+            'order_number' => $this->order_number,
             'date' => now(),
             'due_date' => now()->addDays($this->company->defaultInvoice->payment_terms->getDays()),
             'status' => BillStatus::Draft,

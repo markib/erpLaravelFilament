@@ -10,6 +10,7 @@ use App\Enums\Accounting\AdjustmentComputation;
 use App\Enums\Accounting\BillStatus;
 use App\Enums\Accounting\DocumentDiscountMethod;
 use App\Enums\Accounting\JournalEntryType;
+use App\Enums\Accounting\OrderStatus;
 use App\Enums\Accounting\TransactionType;
 use App\Filament\Company\Resources\Purchases\BillResource;
 use App\Models\Banking\BankAccount;
@@ -114,6 +115,11 @@ class Bill extends Model
     public function withdrawals(): MorphMany
     {
         return $this->transactions()->where('type', TransactionType::Withdrawal)->where('is_payment', true);
+    }
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
     }
 
     public function initialTransaction(): MorphOne
@@ -402,5 +408,122 @@ class Bill extends Model
             ->successRedirectUrl(static function (self $replica) {
                 return BillResource::getUrl('edit', ['record' => $replica]);
             });
+    }
+
+    public function hasQuantityMismatch(): bool
+    {
+        $originalPO = $this->order;
+
+        if (! $originalPO) {
+            return false;
+        }
+
+        foreach ($originalPO->lineItems as $poItem) {
+            $billItem = $this->lineItems->firstWhere('product_id', $poItem->product_id);
+
+            if (! $billItem || $billItem->quantity < $poItem->quantity) {
+                return true; // There's a mismatch
+            }
+        }
+
+        return false; // No mismatch, no need for a backorder
+    }
+
+    public function createBackOrderIfNeeded(): void
+    {
+        $originalPO = $this->order; // Retrieve the associated Purchase Order
+        if (! $originalPO) {
+            return; // Exit if there is no associated PO
+        }
+
+        $backOrderItems = [];
+
+        foreach ($originalPO->lineItems as $poItem) {
+            $billItem = $this->lineItems->firstWhere('product_id', $poItem->product_id);
+
+            if ($billItem && $billItem->quantity < $poItem->quantity) {
+                $shortfall = $poItem->quantity - $billItem->quantity;
+
+                $backOrderItems[] = [
+                    'product_id' => $poItem->product_id,
+                    'quantity' => $shortfall,
+                    'unit_price' => $poItem->unit_price,
+                ];
+            }
+        }
+
+        if (! empty($backOrderItems)) {
+            $this->createBackOrder($originalPO, $backOrderItems);
+        }
+    }
+
+    protected function createBackOrder(Order $originalPO, array $backOrderItems): void
+    {
+        // Check if a backorder already exists for the given PO
+        $existingBackOrder = Order::where('id', $originalPO->order_id)->first();
+
+        if ($existingBackOrder) {
+            throw new \RuntimeException('Back re Order has already been created.');
+        }
+
+        $order = $this->order()->create([
+            'company_id' => $originalPO->company_id,
+            'vendor_id' => $originalPO->vendor_id,
+            'logo' => $originalPO->logo,
+            'header' => $originalPO->header,
+            'subheader' => $originalPO->subheader,
+            'order_number' => Order::getNextDocumentNumber($this->company, 'BO-'),
+            'reference_number' => $this->bill_number,
+            'date' => now(),
+            'expiration_date' => now()->addDays($this->company->defaultInvoice->payment_terms->getDays()),
+            'status' => OrderStatus::Draft,
+            'currency_code' => $originalPO->currency_code,
+            'discount_method' => $originalPO->discount_method,
+            'discount_computation' => $originalPO->discount_computation,
+            'discount_rate' => $originalPO->discount_rate,
+            'subtotal' => $originalPO->subtotal,
+            'tax_total' => $originalPO->tax_total,
+            'discount_total' => $originalPO->discount_total,
+            'total' => $originalPO->total,
+            'terms' => $originalPO->terms,
+            'footer' => $originalPO->footer,
+            'created_by' => $originalPO->created_by,
+            'updated_by' => $originalPO->updated_by,
+            'item_type' => $originalPO->item_type,
+        ]);
+
+        // Pass backorder items to ensure correct quantities are used
+        $this->replicateLineItems($order, $backOrderItems);
+
+    }
+
+    public function replicateLineItems(Model $target, array $backOrderItems): void
+    {
+        $this->lineItems->each(function (DocumentLineItem $lineItem) use ($target, $backOrderItems) {
+
+            // Find the matching product in the backorder items
+            $backOrderItem = collect($backOrderItems)->firstWhere('product_id', $lineItem->product_id);
+
+            $replica = $lineItem->replicate([
+                'documentable_id',
+                'documentable_type',
+                'subtotal',
+                'total',
+                'created_by',
+                'updated_by',
+                'created_at',
+                'updated_at',
+            ]);
+
+            $replica->documentable_id = $target->id;
+            $replica->documentable_type = $target->getMorphClass();
+
+            // Only update quantity, keep original price
+            $replica->quantity = $backOrderItem['quantity']; // Ensure this is validated in a form request
+
+            $replica->save();
+
+            $replica->adjustments()->sync($lineItem->adjustments->pluck('id'));
+        });
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Enums\Accounting\InvoiceStatus;
+use App\Enums\Common\ItemType;
 use App\Models\Accounting\DocumentLineItem;
 use App\Models\Accounting\Invoice;
 use App\Models\Accounting\Transaction;
@@ -27,8 +28,19 @@ class InvoiceObserver
 
     public function saved(Invoice $invoice): void
     {
-        if ($invoice->wasChanged('approved_at') && $invoice->approved_at) {
-            $this->stockMovementService->updateStockFromInvoice($invoice);
+
+        if ($invoice->wasChanged('approved_at') && $invoice->approved_at && $invoice->item_type === ItemType::inventory_product->value) {
+
+            try {
+                \Log::info('Updating stock from invoice');
+                $this->stockMovementService->updateStockFromInvoice($invoice);
+
+            } catch (\Exception $e) {
+                \Log::error('Failed to update stock from invoice: ' . $e->getMessage());
+
+                throw $e; // Re-throw the exception to propagate it
+            }
+
         }
     }
 

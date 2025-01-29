@@ -97,7 +97,7 @@ class BillResource extends Resource
                             Forms\Components\Group::make([
                                 Forms\Components\TextInput::make('bill_number')
                                     ->label('Bill Number')
-                                    ->default(fn () => Bill::getNextDocumentNumber())
+                                    ->default(fn () => Bill::getNextDocumentNumber($company, null))
                                     ->required(),
                                 Forms\Components\TextInput::make('order_number')
                                     ->label('P.O/S.O Number'),
@@ -205,7 +205,7 @@ class BillResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
-                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\EditAction::make()->visible(fn (Bill $record) => is_null($record->goods_received_at)),
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\DeleteAction::make(),
                     Bill::getReplicateAction(Tables\Actions\ReplicateAction::class),
@@ -217,6 +217,11 @@ class BillResource extends Resource
                         })
                         ->action(function (Bill $record) {
                             $record->update(['goods_received_at' => now()]);
+                            // Check for quantity mismatches
+                            if ($record->hasQuantityMismatch()) {
+
+                                $record->createBackOrderIfNeeded();
+                            }
                             Notification::make()
                                 ->title('Goods Received')
                                 ->success()
@@ -327,7 +332,7 @@ class BillResource extends Resource
                         ])
                         ->beforeReplicaSaved(function (Bill $replica) {
                             $replica->status = BillStatus::Unpaid;
-                            $replica->bill_number = Bill::getNextDocumentNumber();
+                            $replica->bill_number = Bill::getNextDocumentNumber(null, null);
                             $replica->date = now();
                             $replica->due_date = now()->addDays($replica->company->defaultBill->payment_terms->getDays());
                         })
@@ -501,7 +506,7 @@ class BillResource extends Resource
                         ->required()
                         ->live()
                         ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
-                            logger()->info($state);
+                            // logger()->info($state);
                             $offeringId = $state;
                             $offeringRecord = Offering::with(['purchaseTaxes', 'purchaseDiscounts'])->find($offeringId);
 
@@ -521,13 +526,15 @@ class BillResource extends Resource
                         ->required()
                         ->numeric()
                         ->live()
-                        ->default(1),
+                        ->default(1)
+                        ->disabled(fn ($record) => ! is_null($record->goods_received_at)),
                     Forms\Components\TextInput::make('unit_price')
                         ->label('Price')
                         ->hiddenLabel()
                         ->numeric()
                         ->live()
-                        ->default(0),
+                        ->default(0)
+                        ->disabled(fn ($record) => ! is_null($record->goods_received_at)),
                     Forms\Components\Select::make('purchaseTaxes')
                         ->label('Taxes')
                         ->relationship('purchaseTaxes', 'name')
@@ -651,6 +658,7 @@ class BillResource extends Resource
                         ->default(1),
                     Forms\Components\TextInput::make('unit_price')
                         ->label('Price')
+                        ->readOnly()
                         ->hiddenLabel()
                         ->numeric()
                         ->live()

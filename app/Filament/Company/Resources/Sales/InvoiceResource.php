@@ -54,7 +54,7 @@ class InvoiceResource extends Resource
 
         return $form
             ->schema([
-                Forms\Components\Section::make('Invoice Header')
+                Forms\Components\Section::make($company->defaultInvoice->header ?? 'Invoice Header')
                     ->collapsible()
                     ->schema([
                         Forms\Components\Split::make([
@@ -195,12 +195,14 @@ class InvoiceResource extends Resource
                             ),
 
                         Forms\Components\Textarea::make('terms')
+                            ->default($company->defaultInvoice->terms ?? 'Default Terms')
                             ->columnSpanFull(),
                     ]),
                 Forms\Components\Section::make('Invoice Footer')
                     ->collapsible()
                     ->schema([
                         Forms\Components\Textarea::make('footer')
+                            ->default($company->defaultInvoice->footer ?? 'Default Footer')
                             ->columnSpanFull(),
                     ]),
 
