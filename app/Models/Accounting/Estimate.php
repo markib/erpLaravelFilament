@@ -430,6 +430,7 @@ class Estimate extends Model
             'header' => $this->company->defaultInvoice->header,
             'subheader' => $this->company->defaultInvoice->subheader,
             'invoice_number' => Invoice::getNextDocumentNumber($this->company),
+            'order_number' => $this->estimate_number,
             'date' => now(),
             'due_date' => now()->addDays($this->company->defaultInvoice->payment_terms->getDays()),
             'status' => InvoiceStatus::Draft,

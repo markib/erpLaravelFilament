@@ -38,7 +38,7 @@ class BillOverview extends EnhancedStatsOverviewWidget
 
         $averagePaymentTime = $this->getPageTableQuery()
             ->whereNotNull('paid_at')
-            ->selectRaw('AVG(TIMESTAMPDIFF(DAY, date, paid_at)) as avg_days')
+            ->selectRaw('(SELECT AVG(EXTRACT(EPOCH FROM (i.date - i.paid_at)) / 86400) FROM invoices AS i WHERE i.paid_at IS NOT NULL) AS avg_days')
             ->value('avg_days');
 
         $averagePaymentTimeFormatted = Number::format($averagePaymentTime ?? 0, maxPrecision: 1);

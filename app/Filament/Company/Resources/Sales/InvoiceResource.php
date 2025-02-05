@@ -150,7 +150,7 @@ class InvoiceResource extends Resource
                                     ->label('Invoice Number')
                                     ->default(fn () => Invoice::getNextDocumentNumber()),
                                 Forms\Components\TextInput::make('order_number')
-                                    ->label('P.O/S.O Number'),
+                                    ->label('S.O Number'),
                                 Forms\Components\DatePicker::make('date')
                                     ->label('Invoice Date')
                                     ->live()

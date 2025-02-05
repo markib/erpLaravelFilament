@@ -4,6 +4,7 @@ namespace App\Models\Accounting;
 
 use App\Casts\MoneyCast;
 use App\Casts\RateCast;
+use App\Collections\Accounting\DocumentCollection;
 use App\Collections\Accounting\InvoiceCollection;
 use App\Concerns\Blamable;
 use App\Concerns\CompanyOwned;
@@ -15,6 +16,7 @@ use App\Enums\Accounting\TransactionType;
 use App\Filament\Company\Resources\Sales\InvoiceResource;
 use App\Models\Banking\BankAccount;
 use App\Models\Parties\Customer;
+use App\Models\Product\Product;
 use App\Observers\InvoiceObserver;
 use App\Utilities\Currency\CurrencyAccessor;
 use App\Utilities\Currency\CurrencyConverter;
@@ -22,6 +24,7 @@ use Database\Factories\Accounting\InvoiceFactory;
 use Filament\Actions\Action;
 use Filament\Actions\MountableAction;
 use Filament\Actions\ReplicateAction;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
@@ -35,7 +38,7 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
 
 #[ObservedBy(InvoiceObserver::class)]
-#[CollectedBy(InvoiceCollection::class)]
+#[CollectedBy(DocumentCollection::class)]
 class Invoice extends Model
 {
     use Blamable;
@@ -126,6 +129,11 @@ class Invoice extends Model
     public function withdrawals(): MorphMany
     {
         return $this->transactions()->where('type', TransactionType::Withdrawal)->where('is_payment', true);
+    }
+
+    public function estimate(): BelongsTo
+    {
+        return $this->belongsTo(Estimate::class);
     }
 
     public function approvalTransaction(): MorphOne
@@ -401,9 +409,18 @@ class Invoice extends Model
             ->databaseTransaction()
             ->successNotificationTitle('Invoice Approved')
             ->action(function (self $record, MountableAction $action) {
-                $record->approveDraft();
+                if ($record->hasQuantityMismatch()) {
 
-                $action->success();
+                    $record->approveDraft();
+
+                    $action->success();
+                } else {
+                    Notification::make()
+                        ->title('Some of Items low stock alert!')
+                        ->body("Please check the inventory.\nRestock necessary items.")
+                        ->success()
+                        ->send();
+                }
             });
     }
 
@@ -476,6 +493,31 @@ class Invoice extends Model
             ->successRedirectUrl(static function (self $replica) {
                 return InvoiceResource::getUrl('edit', ['record' => $replica]);
             });
+    }
+
+    public function hasQuantityMismatch(): bool
+    {
+        $originalEstimate = $this->estimate;
+
+        if (! $originalEstimate) {
+            return false;
+        }
+
+        foreach ($originalEstimate->lineItems as $estimateItem) {
+            $product = Product::find($estimateItem->product_id);
+            if (! $product) {
+                return true; // Product does not exist, mismatch
+            }
+            // Check if the sales invoice quantity aligns with actual stock
+            $salesInvoiceItem = $this->lineItems->firstWhere('product_id', $estimateItem->product_id);
+
+            if ($salesInvoiceItem && $salesInvoiceItem->quantity < $product->product_quantity) {
+
+                return true; // Sales invoice quantity exceeds real stock
+            }
+        }
+
+        return false; // No mismatch,
     }
 
     protected static function newFactory(): Factory
