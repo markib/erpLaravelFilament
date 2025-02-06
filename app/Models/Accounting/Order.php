@@ -11,6 +11,7 @@ use App\Enums\Accounting\AdjustmentComputation;
 use App\Enums\Accounting\BillStatus;
 use App\Enums\Accounting\DocumentDiscountMethod;
 use App\Enums\Accounting\OrderStatus;
+use App\Enums\Common\ItemType;
 use App\Filament\Company\Resources\Purchases\BillResource;
 use App\Filament\Company\Resources\Purchases\OrderResource;
 use App\Models\Parties\Supplier;
@@ -205,6 +206,15 @@ class Order extends Model
     // {
     //     return $this->hasOne(Bill::class);
     // }
+    public function scopeInventoryProduct($query)
+    {
+        return $query->where('item_type', ItemType::inventory_product);
+    }
+
+    public function scopeCreatedBetween($query, $startDate, $endDate)
+    {
+        return $query->whereBetween('created_at', [$startDate, $endDate]);
+    }
 
     public function scopeActive(Builder $query): Builder
     {
