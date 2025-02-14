@@ -35,8 +35,11 @@ use App\Filament\Company\Resources\Purchases\OrderResource;
 use App\Filament\Company\Resources\Sales\EstimateResource;
 use App\Filament\Company\Resources\Sales\InvoiceResource;
 use App\Filament\Company\Resources\SupplierResource;
+use App\Filament\Company\Widgets\OrderChart;
+use App\Filament\Company\Widgets\SalesChart;
 use App\Filament\Components\PanelShiftDropdown;
 use App\Filament\User\Clusters\Account;
+use App\Filament\Widgets\EnhancedStatsOverviewWidget;
 use App\Http\Middleware\ConfigureCurrentCompany;
 use App\Livewire\UpdatePassword;
 use App\Livewire\UpdateProfileInformation;
@@ -254,9 +257,11 @@ class FilamentCompaniesServiceProvider extends PanelProvider
             ->authGuard('web')
             ->discoverWidgets(in: app_path('Filament/Company/Widgets'), for: 'App\\Filament\\Company\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
-
+                // Widgets\AccountWidget::class,
+                // Widgets\FilamentInfoWidget::class,
+                EnhancedStatsOverviewWidget::class,
+                OrderChart::class,
+                SalesChart::class,
             ])
             ->middleware([
                 EncryptCookies::class,

@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\Setting\Font;
+
 return [
 
     /*
@@ -41,5 +43,8 @@ return [
     */
 
     'default_filesystem_disk' => env('FILAMENT_FILESYSTEM_DISK', 'public'),
-
+    'brand_fonts' => [
+        'heading' => Font::DEFAULT, // or Font::Roboto->value
+        'body' => Font::DEFAULT,
+    ],
 ];

@@ -191,6 +191,16 @@ class Bill extends Model
         return $this->initialTransaction()->exists();
     }
 
+    public function scopeUnpaid(Builder $query): Builder
+    {
+        return $query->whereIn('status', [
+            BillStatus::Open,
+            BillStatus::Unpaid,
+            BillStatus::Partial,
+            BillStatus::Overdue,
+        ]);
+    }
+
     public function scopeOutstanding(Builder $query): Builder
     {
         return $query->whereIn('status', [

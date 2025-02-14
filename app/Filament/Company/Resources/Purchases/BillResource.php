@@ -8,6 +8,7 @@ use App\Enums\Accounting\DocumentType;
 use App\Enums\Accounting\PaymentMethod;
 use App\Enums\Common\ItemType;
 use App\Filament\Company\Resources\Purchases\BillResource\Pages;
+use App\Filament\Company\Resources\Purchases\BillResource\Widgets;
 use App\Filament\Forms\Components\CreateCurrencySelect;
 use App\Filament\Forms\Components\DocumentTotals;
 use App\Filament\Tables\Actions\ReplicateBulkAction;
@@ -100,7 +101,7 @@ class BillResource extends Resource
                                     ->default(fn () => Bill::getNextDocumentNumber($company, null))
                                     ->required(),
                                 Forms\Components\TextInput::make('order_number')
-                                    ->label('P.O/S.O Number'),
+                                    ->label('P.O Number'),
                                 Forms\Components\DatePicker::make('date')
                                     ->label('Bill Date')
                                     ->default(now())
@@ -467,7 +468,7 @@ class BillResource extends Resource
     public static function getWidgets(): array
     {
         return [
-            BillResource\Widgets\BillOverview::class,
+            Widgets\BillOverview::class,
         ];
     }
 
