@@ -23,8 +23,9 @@ $filters = $this->getFilters();
 
         <!-- Custom Date Selector -->
         @if ($filter === 'custom_range')
-
-        {{ $this->form}}
+        <form wire:submit.prevent="applyDateFilter" class="mt-4">
+            {{ $this->form}}
+        </form>
         <div class="mt-2">
             <button wire:click="applyDateFilter"
                 class="fi-button fi-button-primary px-4 py-2 text-white bg-primary-600 hover:bg-primary-700 rounded-lg">
@@ -54,38 +55,3 @@ $filters = $this->getFilters();
         </div>
     </x-filament::section>
 </x-filament-widgets::widget>
-
-<!-- Include Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('chart', ({
-            cachedData,
-            options,
-            type
-        }) => ({
-            chart: null,
-            init() {
-                this.$nextTick(() => {
-                    if (!window.Chart) {
-                        console.error('Chart.js is not loaded');
-                        return;
-                    }
-                    const ctx = this.$refs.canvas.getContext('2d');
-                    this.chart = new Chart(ctx, {
-                        type,
-                        data: cachedData,
-                        options
-                    });
-                });
-                /* this.$wire.on('updateChartData', ({
-                     data
-                 }) => {
-                     this.chart.data = data;
-                     this.chart.update();
-                 });
-                 */
-            }
-        }));
-    });
-</script>

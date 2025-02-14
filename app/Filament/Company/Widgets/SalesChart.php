@@ -6,7 +6,6 @@ use App\Enums\Common\ItemType;
 use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Widgets\ChartWidget;
@@ -15,19 +14,19 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 
-class OrderChart extends ChartWidget implements HasForms
+class SalesChart extends ChartWidget implements HasForms
 {
     use InteractsWithForms;
 
-    protected static string $view = 'filament.company.widgets.order-chart';
+    protected static string $view = 'filament.company.widgets.sales-chart';
 
-    protected static ?string $heading = 'Purchases Per Month';
+    protected static ?string $heading = 'Sales Per Month';
 
     protected static ?string $pollingInterval = null;
 
     protected static bool $isLazy = false;
 
-    protected static ?int $sort = 1;
+    protected static ?int $sort = 2;
 
     public ?string $filter = 'current_year';
 
@@ -43,21 +42,6 @@ class OrderChart extends ChartWidget implements HasForms
     protected function getFormSchema(): array
     {
         return [
-            // Select::make('filter')
-            //     ->label('Filter')
-            //     ->options([
-            //         'current_year' => 'This Year',
-            //         'last_year' => 'Last Year',
-            //         'custom_range' => 'Custom Date Range',
-            //     ])
-            //     ->default('current_year')
-            //     ->reactive()
-            //     ->afterStateUpdated(function ($state, callable $set) {
-            //         if ($state !== 'custom_range') {
-            //             $set('startDate', null);
-            //             $set('endDate', null);
-            //         }
-            //     }),
 
             Grid::make(2) // Adjusts width by setting columns
                 ->schema([
@@ -71,13 +55,13 @@ class OrderChart extends ChartWidget implements HasForms
                         ->visible(fn ($get) => $get('filter') === 'custom_range')
                         ->columnSpan(1), // Keeping it small
                 ]),
-
         ];
     }
 
-    #[On('refreshChartData')]
-    protected function getData(): array
+    #[On('refreshSalesChartData')]
+    public function getData(): array
     {
+        // logger()->info('getData method called in SalesChart');
         $now = now();
 
         switch ($this->filter) {
@@ -100,7 +84,8 @@ class OrderChart extends ChartWidget implements HasForms
                 $startDate = $now->copy()->startOfYear();
                 $endDate = $now->copy()->endOfYear();
         }
-        $purchaseOrders = DB::table('orders')
+
+        $salesOrders = DB::table('estimates')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->where('item_type', ItemType::inventory_product)
             ->selectRaw('EXTRACT(MONTH FROM created_at) as month, COUNT(*) as count')
@@ -108,7 +93,7 @@ class OrderChart extends ChartWidget implements HasForms
             ->orderBy('month')
             ->get();
 
-        $purchaseBills = DB::table('bills')
+        $salesInvoices = DB::table('invoices')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->where('item_type', ItemType::inventory_product)
             ->selectRaw('EXTRACT(MONTH FROM created_at) as month, COUNT(*) as count')
@@ -116,27 +101,27 @@ class OrderChart extends ChartWidget implements HasForms
             ->orderBy('month')
             ->get();
 
-        $labels = $purchaseOrders->pluck('month')->map(function ($month) {
+        $labels = $salesOrders->pluck('month')->map(function ($month) {
             return \Carbon\Carbon::create()->month((int) $month)->format('M');
         })->toArray();
 
-        $podata = $purchaseOrders->pluck('count')->map(fn ($count) => (int) $count)->toArray();
-        $pbdata = $purchaseBills->pluck('count')->map(fn ($count) => (int) $count)->toArray();
+        $soData = $salesOrders->pluck('count')->map(fn ($count) => (int) $count)->toArray();
+        $siData = $salesInvoices->pluck('count')->map(fn ($count) => (int) $count)->toArray();
 
         return [
             'labels' => $labels,
             'datasets' => [
                 [
-                    'label' => 'Purchase Orders',
-                    'data' => $podata,
-                    'borderColor' => '#4CAF50',
-                    'backgroundColor' => 'rgba(76, 175, 80, 0.1)',
+                    'label' => 'Sales Orders',
+                    'data' => $soData,
+                    'borderColor' => '#4a4cc4',
+                    'backgroundColor' => 'rgba(74, 76, 196, 0.1)',
                 ],
                 [
-                    'label' => 'Purchase Bills',
-                    'data' => $pbdata,
-                    'borderColor' => '#2196F3',
-                    'backgroundColor' => 'rgba(33, 150, 243, 0.1)',
+                    'label' => 'Sales Invoices',
+                    'data' => $siData,
+                    'borderColor' => '#51a6bb',
+                    'backgroundColor' => 'rgba(81, 166, 187, 0.1)',
                 ],
             ],
         ];
@@ -144,7 +129,7 @@ class OrderChart extends ChartWidget implements HasForms
 
     public function mount(): void
     {
-        $this->updateChartData();
+        // $this->updateChartData();
         $this->dataChecksum = $this->generateDataChecksum();
     }
 
@@ -183,7 +168,8 @@ class OrderChart extends ChartWidget implements HasForms
 
     public function applyDateFilter()
     {
-        $this->dispatch('refreshChart');
+
+        $this->dispatch('refreshSalesChartData');
     }
 
     protected function getCachedData(): array
@@ -191,28 +177,29 @@ class OrderChart extends ChartWidget implements HasForms
         return $this->cachedData ??= $this->getData();
     }
 
-    public function updateChartData(): void
-    {
-        $newDataChecksum = $this->generateDataChecksum();
+    // public function updateChartData(): void
+    // {
 
-        if ($newDataChecksum !== $this->dataChecksum) {
-            $this->dataChecksum = $newDataChecksum;
+    //     $newDataChecksum = $this->generateDataChecksum();
 
-            $this->dispatch('updateChartData', data: $this->getCachedData());
-        }
-    }
+    //     if ($newDataChecksum !== $this->dataChecksum) {
+    //         $this->dataChecksum = $newDataChecksum;
+
+    //         $this->dispatch('updateChartData', data: $this->getCachedData());
+    //     }
+    // }
 
     public function updatedFilter()
     {
         $this->cachedData = null;
-        $this->updateChartData();
+        // $this->updateChartData();
     }
 
     public function updatedStartDate()
     {
         if ($this->filter === 'custom_range') {
             $this->cachedData = null;
-            $this->updateChartData();
+            // $this->updateChartData();
         }
     }
 
@@ -220,15 +207,15 @@ class OrderChart extends ChartWidget implements HasForms
     {
         if ($this->filter === 'custom_range') {
             $this->cachedData = null;
-            $this->updateChartData();
+            // $this->updateChartData();
         }
     }
 
     public function render(): View
     {
-        $this->updateChartData();
+        // $this->updateChartData();
 
-        return view('filament.company.widgets.order-chart', [
+        return view('filament.company.widgets.sales-chart', [
             'chartData' => $this->getData(),
             'cachedData' => $this->getCachedData(),
             'chartOptions' => $this->getOptions(),

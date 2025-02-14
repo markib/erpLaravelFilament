@@ -36,6 +36,7 @@ use App\Filament\Company\Resources\Sales\EstimateResource;
 use App\Filament\Company\Resources\Sales\InvoiceResource;
 use App\Filament\Company\Resources\SupplierResource;
 use App\Filament\Company\Widgets\OrderChart;
+use App\Filament\Company\Widgets\SalesChart;
 use App\Filament\Components\PanelShiftDropdown;
 use App\Filament\User\Clusters\Account;
 use App\Filament\Widgets\EnhancedStatsOverviewWidget;
@@ -260,6 +261,7 @@ class FilamentCompaniesServiceProvider extends PanelProvider
                 // Widgets\FilamentInfoWidget::class,
                 EnhancedStatsOverviewWidget::class,
                 OrderChart::class,
+                SalesChart::class,
             ])
             ->middleware([
                 EncryptCookies::class,
